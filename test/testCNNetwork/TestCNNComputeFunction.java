@@ -91,15 +91,15 @@ public class TestCNNComputeFunction {
 	public void testCompute() {
 		double result0 = testLayer.compute(testLayer.filters.get(0), testLayer.values, 0, 0, 0,
 				testLayer.biases.get(0));
-		assertEquals(result0, 7, 0);
+		assertEquals(result0, 5, 0);
 
 		double result1 = testLayer.compute(testLayer.filters.get(0), testLayer.values, 1, 1, 0,
 				testLayer.biases.get(0));
-		assertEquals(result1, 6, 0);
+		assertEquals(result1, 4, 0);
 
 		double result2 = testLayer.compute(testLayer.filters.get(0), testLayer.values, 0, 1, 0,
 				testLayer.biases.get(0));
-		assertEquals(result2, 6, 0);
+		assertEquals(result2, 4, 0);
 	}
 
 }

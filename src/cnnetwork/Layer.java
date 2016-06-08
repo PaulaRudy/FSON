@@ -68,9 +68,9 @@ public class Layer {
 					result += input[(depth + i)][(row + j)][(collumn + k)] * filter[i][j][k];
 				}
 			}
-			result += bias;
+			
 		}
-
+		result += bias;
 		return result;
 	}
 
@@ -107,6 +107,32 @@ public class Layer {
 		}
 
 		return result;
+	}
+	
+	/**
+	 * TODO: add code for padding. add input checking
+	 * @param input
+	 * @param filters
+	 * @param output
+	 * @param step
+	 * @param padding
+	 * @param biases
+	 */
+	public void convolution(double [][][] input, LinkedList<double[][][]> filters, double [][][] output, int step, int padding, LinkedList<Double> biases){
+	
+		//For every filter and bias in the list
+		for(int l = 0; l< filters.size(); l++){
+			
+				//Row
+				for (int j = 0; j < output[0].length; j+=step) {
+					//Column
+					for (int k = 0; k < output[0][0].length; k+=step) {
+						output[l][(j/step)][(k/step)] = compute(filters.get(l), input, k, j,0, biases.get(l));
+						
+					}
+				}
+
+		}
 	}
 
 }

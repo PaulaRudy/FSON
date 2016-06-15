@@ -134,5 +134,32 @@ public class Layer {
 
 		}
 	}
+	
+	/**
+	 * TODO: add code for padding. add input checking
+	 * @param input
+	 * @param filters
+	 * @param output
+	 * @param step
+	 * @param padding
+	 * @param biases
+	 */
+	public void pool(double [][][] input, double [][][] output, int step, int f){
+
+		// Depth
+		for (int l = 0; l < input.length; l++){
+			// Row
+			for (int j = 0; j < input[0].length; j += step) {
+				// Column
+				for (int k = 0; k < input[0][0].length; k += step) {
+					output[l][(j / step)][(k / step)] = computeMax(input, k, j, l, f);
+
+				}
+
+			}
+			
+		}
+		
+	}
 
 }

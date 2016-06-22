@@ -2,8 +2,6 @@ package testCNNetwork;
 
 import static org.junit.Assert.*;
 
-import java.util.LinkedList;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -13,11 +11,11 @@ import cnnetwork.LayerType;
 public class TestCNNConvolutionFunction {
 
 	Layer testLayer;
-	
+
 	double[][][] testFilter0, testFilter1, testFilter2, testFilter3;
-	
+
 	double testBias0, testBias1, testBias2, testBias3;
-	
+
 	double[][][] testOut;
 
 	/**
@@ -41,7 +39,6 @@ public class TestCNNConvolutionFunction {
 		testLayer.values[0][2][1] = 1;
 		testLayer.values[0][2][2] = 0;
 
-		
 		testLayer.values[1][0][0] = 1;
 		testLayer.values[1][0][1] = 0;
 		testLayer.values[1][0][2] = 2;
@@ -54,7 +51,6 @@ public class TestCNNConvolutionFunction {
 		testLayer.values[1][2][1] = 1;
 		testLayer.values[1][2][2] = 2;
 
-		
 		testLayer.values[2][0][0] = 1;
 		testLayer.values[2][0][1] = 2;
 		testLayer.values[2][0][2] = 0;
@@ -92,8 +88,7 @@ public class TestCNNConvolutionFunction {
 		testBias0 = 1;
 
 		testLayer.biases.add(testBias0);
-		
-		
+
 		testFilter1 = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
 
 		testFilter1[0][0][0] = -1;
@@ -119,8 +114,7 @@ public class TestCNNConvolutionFunction {
 		testBias1 = 0;
 
 		testLayer.biases.add(testBias1);
-		
-		
+
 		testFilter2 = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
 
 		testFilter2[0][0][0] = 0;
@@ -146,7 +140,7 @@ public class TestCNNConvolutionFunction {
 		testBias2 = -1;
 
 		testLayer.biases.add(testBias2);
-		
+
 		testFilter3 = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
 
 		testFilter3[0][0][0] = 0;
@@ -172,18 +166,18 @@ public class TestCNNConvolutionFunction {
 		testBias3 = -2;
 
 		testLayer.biases.add(testBias3);
-		
-		int width = ((testLayer.values[0][0].length -testLayer.Fcollumns + (2* testLayer.pad))/testLayer.step)+ 1;
-		
+
+		int width = ((testLayer.values[0][0].length - testLayer.Fcollumns + (2 * testLayer.pad)) / testLayer.step) + 1;
+
 		testOut = new double[testLayer.K][width][width];
 	}
 
 	@Test
 	public void test() {
 		testLayer.convolution(testLayer.values, testLayer.filters, testOut, 1, 0, testLayer.biases);
-		
+
 		double[][][] temp = new double[4][2][2];
-		
+
 		temp[0][0][0] = 5;
 		temp[0][0][1] = 0;
 
@@ -201,17 +195,17 @@ public class TestCNNConvolutionFunction {
 
 		temp[2][1][0] = -2;
 		temp[2][1][1] = -3;
-		
+
 		temp[3][0][0] = -1;
 		temp[3][0][1] = -2;
 
 		temp[3][1][0] = -3;
 		temp[3][1][1] = 1;
-		
+
 		for (int i = 0; i < temp.length; i++) {
 			for (int j = 0; j < temp[0].length; j++) {
 				for (int k = 0; k < temp[0][0].length; k++) {
-					assertEquals(temp[i][j][k], testOut[i][j][k], 0); 
+					assertEquals(temp[i][j][k], testOut[i][j][k], 0);
 				}
 			}
 		}

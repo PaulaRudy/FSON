@@ -191,4 +191,20 @@ public class Layer {
 		}
 
 	}
+	
+	/**
+	 * 
+	 * @param input
+	 * @param filters
+	 * @param output
+	 * @param step
+	 * @param padding
+	 * @param biases
+	 */
+	public void full(double[][][] input, LinkedList<double[][][]> filters, double[] output, int step, int padding,
+			LinkedList<Double> biases){
+		for (int f = 0; f < filters.size(); f++) {
+			output[f] = compute(filters.get(f), input, 0, 0, 0, biases.get(f));			
+		}
+	}
 }

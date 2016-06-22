@@ -8,7 +8,7 @@ import org.junit.Test;
 import cnnetwork.Layer;
 import cnnetwork.LayerType;
 
-public class TestPoolFunction {
+public class TestCNNPoolFunction {
 
 	Layer testLayer;
 	

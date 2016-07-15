@@ -5,9 +5,7 @@ import java.awt.image.DataBufferByte;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-
 import javax.imageio.ImageIO;
-
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -20,19 +18,21 @@ import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.CascadeClassifier;
 
-@SuppressWarnings("unused")
+/**
+ * This class contains all the code to preprocess a frame.
+ * 
+ * @author Paula Rudy
+ *
+ */
 public class Align {
 
-	static CascadeClassifier face_cascade;
-	static CascadeClassifier eyes_cascade;
+	static CascadeClassifier face_cascade; // This holds the Haar cascade classifier for identifying potential faces TODO: remove this?
+	static CascadeClassifier eyes_cascade; // This holds the Haar cascade classifier for identifying potential eyes TODO: remove this?
 
 	/**
 	 * Sample main class.
-	 * TODO: turn this into a junit test
-	 * @throws IOException
 	 */
 //	public static void main(String[] args) throws IOException {
-//		//file named here must be in same location as this class file
 //		BufferedImage image = ImageIO.read(Align.class.getResource("print.jpg"));
 //
 //		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -50,19 +50,43 @@ public class Align {
 //		processFaces(test, detected);
 //	}
 
+	/**
+	 * This function does the work for processing faces from a single static
+	 * image input into individual, aligned images of faces.
+	 * 
+	 * @param image
+	 *            The static image to be processed
+	 * @param faces
+	 *            The location of the detected faces (generate using
+	 *            buildFaceArray)
+	 * @throws IOException
+	 */
 	public static void processFaces(Mat image, Rect[] faces) throws IOException {
+
+		// For every potential face in the image
 		for (int i = 0; i < faces.length; i++) {
+			// Grab the next face in the image.
 			Mat tempFace = image.submat((int) Math.round(faces[i].tl().y), (int) Math.round(faces[i].br().y),
 					(int) Math.round(faces[i].tl().x), (int) Math.round(faces[i].br().x));
+
+			// See if we can find any eyes in this "face"
 			Rect[] tempEyes = buildEyeArray(tempFace);
+
+			// If at least 2 eyes are detected...
 			if (tempEyes.length >= 2) {
+				
 				Point eyeA = new Point((tempEyes[0].tl().x + (tempEyes[0].width / 2)),
 						(tempEyes[0].tl().y + (tempEyes[0].height / 2))); // find center of eye at tempEyes[0]
+				
 				Point eyeB = new Point((tempEyes[1].tl().x + (tempEyes[1].width / 2)),
 						(tempEyes[1].tl().y + (tempEyes[1].height / 2))); // find center of eye at tempEyes[1]
-				tempFace = alignEyes(tempFace, eyeA, eyeB);
+				
+				tempFace = alignEyes(tempFace, eyeA, eyeB); // Align the face so that the eyes are level
 
+				// See if we can detect a nose...
 				Rect nose = detectNose(tempFace);
+
+				// If a nose is found, write the finished face to a file
 				if (nose.tl().x != -1) {
 					writeMatToJpgFile(tempFace, "face_" + i + ".jpg");
 				}
@@ -70,23 +94,31 @@ public class Align {
 		}
 	}
 
-	/*
-	 * Tested.
+	/**
+	 * Does what it says on the tin: Uses a Haar cascade to locate any potential
+	 * noses in the image passed in as "face"
+	 * 
+	 * @param face
+	 *            The image in which to find a nose. Must be CvType.CV_8UC4.
+	 * @return A Rect containing the location of the first potential nose found
 	 */
 	public static Rect detectNose(Mat face) {
 
-		// Create a grayscale image
+		// Create a grayscale image from the Mat passed in as "face"
 		Mat grayscaleImage;
 		grayscaleImage = new Mat(face.height(), face.width(), CvType.CV_8UC4);
 
 		Imgproc.cvtColor(face, grayscaleImage, Imgproc.COLOR_RGBA2RGB);
 
+		// This will hold the locations of any noses found
 		MatOfRect potentialNoses = new MatOfRect();
 
+		// Create and load the haar cascade classifier
 		CascadeClassifier nose_cascade = new CascadeClassifier();
 		nose_cascade.load("Cascades/haarcascade_mcs_nose.xml");
 
-		// Use the classifier to detect faces
+		// Use the classifier to detect faces.
+		// Noses will not be any smaller than 1/50th of the image.
 		if (nose_cascade != null) {
 			nose_cascade.detectMultiScale(grayscaleImage, potentialNoses, 1.1, 2, 2,
 					new Size((face.width() / 50), (face.height() / 50)), new Size());
@@ -94,13 +126,14 @@ public class Align {
 
 		Rect[] temp = potentialNoses.toArray();
 
-//		//This section will draw a green dot in the center of the detected nose(s), if there are any
+		//This section will draw a green dot in the center of the detected nose(s), if there are any
 //		for (int i = 0; i <temp.length; i++){
 //			Point center = new Point( (temp[i].tl().x + (temp[i].width/2)) ,
 //					(temp[i].tl().y + (temp[i].height/2)));
 //			Core.rectangle(face, center , center, new Scalar(0, 255, 0, 255), 3);
 //		}
 
+		// Grab the first "nose" on the list, if there are any
 		Rect nose = new Rect(new Point(-1, -1), new Point(-1, -1));
 		if (temp.length != 0)
 			nose = temp[0];
@@ -108,20 +141,31 @@ public class Align {
 		return nose;
 	}
 
+	/**
+	 * Does what it says on the tin: Using a haar cascade classifier, detect the
+	 * locations of any potential eyes found in the image passed in as "face".
+	 * 
+	 * @param face
+	 *            The image to find eyes in. Must be CvType.CV_8UC4.
+	 * @return A Rect[] containing the location of any potential eyes found
+	 */
 	public static Rect[] buildEyeArray(Mat face) {
 
-		// Create a grayscale image
+		// Create a grayscale image from the Mat passed in as "face"
 		Mat grayscaleImage;
 		grayscaleImage = new Mat(face.height(), face.width(), CvType.CV_8UC4);
 
 		Imgproc.cvtColor(face, grayscaleImage, Imgproc.COLOR_RGBA2RGB);
 
+		// This will hold the locations of any eyes found
 		MatOfRect eyes = new MatOfRect();
 
+		// Create and load the haar cascade classifier
 		CascadeClassifier eye_cascade = new CascadeClassifier();
 		eye_cascade.load("Cascades/haarcascade_eye.xml");
 
 		// Use the classifier to detect eyes
+		// Eyes found will not be any smaller than 1/50th of the image.
 		if (eye_cascade != null) {
 			eye_cascade.detectMultiScale(grayscaleImage, eyes, 1.1, 2, 2,
 					new Size((face.width() / 50), (face.height() / 50)), new Size());
@@ -129,7 +173,7 @@ public class Align {
 
 		Rect[] eyesArray = eyes.toArray();
 
-//		//This section will draw a green dot in the center of the detected eye(s), if there are any
+		//This section will draw a green dot in the center of the detected eye(s), if there are any
 //		for (int i = 0; i <eyesArray.length; i++){
 //			Point center = new Point( (eyesArray[i].tl().x +
 //					(eyesArray[i].width/2)) , (eyesArray[i].tl().y +
@@ -140,23 +184,32 @@ public class Align {
 		return eyesArray;
 	}
 
-	/*
-	 * Tested, works on CV_8UC4.
+	/**
+	 * Does what it says on the tin: Given an image (passed in as
+	 * "aInputFrame"), use a haar cascade classifier to find the location of any
+	 * potential "faces" within that image.
+	 * 
+	 * @param aInputFrame
+	 *            The image to find faces in. Must be CvType.CV_8UC4.
+	 * @return A Rect[] containing the location of any potential faces found
 	 */
 	public static Rect[] buildFaceArray(Mat aInputFrame) {
 
-		// Create a grayscale image
+		// Create a grayscale image from the Mat passed in as "aInputFrame"
 		Mat grayscaleImage;
 		grayscaleImage = new Mat(aInputFrame.height(), aInputFrame.width(), CvType.CV_8UC4);
 
 		Imgproc.cvtColor(aInputFrame, grayscaleImage, Imgproc.COLOR_RGBA2RGB);
 
+		// This will hold the locations of any faces found
 		MatOfRect faces = new MatOfRect();
 
+		// Create and load the haar cascade classifier
 		CascadeClassifier face_cascade = new CascadeClassifier();
 		face_cascade.load("Cascades/haarcascade_frontalface_alt2.xml");
 
-		// Use the classifier to detect faces
+		// Use the classifier to detect faces.
+		// faces found will not be any smaller than 1/100th of the input image.
 		if (face_cascade != null) {
 			face_cascade.detectMultiScale(grayscaleImage, faces, 1.1, 2, 2,
 					new Size((aInputFrame.width() / 100), (aInputFrame.height() / 100)), new Size());
@@ -167,13 +220,16 @@ public class Align {
 		return facesArray;
 	}
 
-	/*
-	 * Does what it says on the tin. Converts a jpg to an OpenCV "Mat" and
+	/**
+	 * Does what it says on the tin: Converts a jpg to an OpenCV "Mat" and
 	 * returns it.
 	 * 
 	 * NOTE: Make sure System.loadLibrary(Core.NATIVE_LIBRARY_NAME); has been
 	 * called before using this.
 	 * 
+	 * @param image
+	 *            The image to convert.
+	 * @return A Mat (type CvType.CV_8UC3)
 	 */
 	public static Mat bufferedImageToMat(BufferedImage image) {
 
@@ -184,9 +240,9 @@ public class Align {
 		return newMat;
 	}
 
-	/*
-	 * Does what it says on the tin. Writes an OpenCV CvType.CV_8UC3 Mat to a
-	 * .jpg
+	/**
+	 * Does what it says on the tin. 
+	 * Writes an OpenCV CvType.CV_8UC3 Mat to a .jpg
 	 * 
 	 * NOTE: Make sure System.loadLibrary(Core.NATIVE_LIBRARY_NAME); has been
 	 * called before using this.
@@ -195,8 +251,8 @@ public class Align {
 		Highgui.imwrite(filename, toWrite);
 	}
 
-	/*
-	 * Does what it says on the tin. Writes a BufferedImage to a .jpg.
+	/**
+	 * Does what it says on the tin. Writes a BufferedImage to a .jpg file.
 	 * 
 	 */
 	public static void writeBuffImageToJpgFile(BufferedImage toWrite, String filename) throws IOException {
@@ -205,16 +261,30 @@ public class Align {
 	}
 
 	/**
-	 * Align the face so that the eyes are perfectly level. If they are already
-	 * aligned, do nothing.
+	 * Given an image and the location of two eyes, align the face so that the
+	 * eyes are perfectly level. If they are already aligned, do nothing.
+	 * 
+	 * @param image
+	 *            the Mat containing the face to be aligned
+	 * @param eyeA
+	 *            The location of the left eye
+	 * @param eyeB
+	 *            The location of the right eye
+	 * @return
 	 */
 	public static Mat alignEyes(Mat image, Point eyeA, Point eyeB) {
+
 		double deltaY = eyeB.y - eyeA.y; // Change in Y coord
+
 		if (deltaY == 0) { // If eyes are already aligned...
+
 			return image;
+
 		} else {
+
 			double deltaX = eyeB.x - eyeA.x;// Change in X coord
 			double arctan;
+
 			if (deltaX == 0) // If eyes are perfectly vertical...
 			{
 				arctan = (Math.PI / 2); // (to avoid dividing by zero)

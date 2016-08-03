@@ -27,7 +27,20 @@ public class Layer {
 		this.biases = new LinkedList<Double>();
 		this.filters = new LinkedList<double[][][]>();
 		this.type = type;
-		this.values = new double[depth][rows][collumns];
+		this.cells = new NetworkCell[depth][rows][collumns];
+		
+		// Don't forget to initialize the cells, as Java won't do it for you.
+		// Depth
+		for (int d = 0; d < depth; d++) {
+			// Row
+			for (int r = 0; r < rows; r++) {
+				// Column
+				for (int c = 0; c < collumns; c++) {
+					this.cells[d][r][c] = new NetworkCell();
+				}
+			}
+		}
+	
 	}
 
 	public final int collumns;// The width of the layer
@@ -42,7 +55,7 @@ public class Layer {
 	public LinkedList<Double> biases;// The list of biases to be applied, in the same order as the list of filters.
 	public LinkedList<double[][][]> filters;// The list of filters to be applied, in the same order as the list of biases.
 	public final LayerType type;// The type of this layer. This determines how the values for the next layer are calculated.
-	public double[][][] values;// The actual 3 dimensional array that stores the values for this layer.
+	public NetworkCell[][][] cells;// The actual 3 dimensional array that stores the cells ("NetworkCell") for this layer.
 	
 	/**
 	 * This function computes a single output value, given:
@@ -50,9 +63,9 @@ public class Layer {
 	 * @param filter
 	 *            a three dimensional filter to apply
 	 * @param input
-	 *            the three dimensional array that contains the value of the
+	 *            the three dimensional array that contains the cells of the
 	 *            layer to be used in computation.
-	 * @param collumn
+	 * @param column
 	 *            [][][x] location of top left coordinate of input to apply
 	 *            filter to
 	 * @param row
@@ -65,30 +78,29 @@ public class Layer {
 	 *            the bias to be used in this computation.
 	 * @return the newly computed value to be stored into the next layer.
 	 */
-	public double compute(double[][][] filter, double[][][] input, int collumn, int row, int depth, double bias) {
-		// TODO: add error checking: that filter is not bigger than input, that
-		// type is right, that won't go off edge, that everything exists, that
-		// filter and bias are same index, that coords are valid
+	public double compute(double[][][] filter, NetworkCell[][][] input, int column, int row, int depth, double bias) {
 		double result = 0.0;
 
+		//For every cell in the input array, using depth, row, and column as the starting point,
+		//multiply that value by the corresponding entry in the filter, and add it to the result
 		for (int i = 0; i < filter.length; i++) {
 			for (int j = 0; j < filter[0].length; j++) {
 				for (int k = 0; k < filter[0][0].length; k++) {
-					result += input[(depth + i)][(row + j)][(collumn + k)] * filter[i][j][k];
+					result += input[(depth + i)][(row + j)][(column + k)].value * filter[i][j][k];
 				}
 			}
 
 		}
-		result += bias;
+		result += bias;//Add the bias
 		return result;
 	}
 
 	/**
 	 * This function computes a single output value as the maximum of the area
-	 * of the input selected, given:
+	 * of the input selected (only at a single depth slice), given:
 	 * 
 	 * @param input
-	 *            the three dimensional array that contains the value of the
+	 *            the three dimensional array that contains the cells of the
 	 *            layer to be used in computation.
 	 * @param collumn
 	 *            [][][x] location of top left coordinate of input to find max
@@ -103,18 +115,21 @@ public class Layer {
 	 *            dimension (F x F (@ the depth)) of section of input to find
 	 *            max in
 	 * @return
+	 * 			  The found maximum of that area
 	 */
-	public double computeMax(double[][][] input, int collumn, int row, int depth, int F) {
-		// TODO: add error checking: that kernel size is not bigger than input,
-		// that type is right, that won't go off edge, that everything exists,
-		// that coords are valid
+	public double computeMax(NetworkCell[][][] input, int collumn, int row, int depth, int F) {
 
+		//Start with 0. Since every value is between 0 and 1,
+		//this is guaranteed to be <= to every cell value. 
 		double result = 0.0;
 
+		//For every cell at this depth ("depth"), find the max value.
+		//Make sure not to go off the edge of the filter "(j < F)",
+		//or the input "((row + j) < input[0].length)".
 		for (int j = 0; ((j < F) && ((row + j) < input[0].length)); j++) {
 			for (int k = 0; ((k < F) && ((collumn + k) < input[0][0].length)); k++) {
-				if (result < input[depth][(row + j)][(collumn + k)]) {
-					result = input[depth][(row + j)][(collumn + k)];
+				if (result < input[depth][(row + j)][(collumn + k)].value) {
+					result = input[depth][(row + j)][(collumn + k)].value;
 				}
 			}
 		}
@@ -123,11 +138,10 @@ public class Layer {
 	}
 
 	/**
-	 * This function is used to compute the convolution of a layer TODO: add
-	 * code for padding. add input checking
+	 * This function is used to compute the convolution of a layer.
 	 * 
 	 * @param input
-	 *            the three dimensional array that contains the values of the
+	 *            the three dimensional array that contains the cells of the
 	 *            layer to be used in computation.
 	 * @param filters
 	 *            the list of three dimensional filters to apply to the input
@@ -145,17 +159,22 @@ public class Layer {
 	 *            the list of biases to be applied to the input layer, in the
 	 *            same order as the list of filters.
 	 */
-	public void convolution(double[][][] input, LinkedList<double[][][]> filters, double[][][] output, int step,
+	public void convolution(NetworkCell[][][] input, LinkedList<double[][][]> filters, NetworkCell[][][] output, int step,
 			int padding, LinkedList<Double> biases) {
 
 		// For every filter and bias in the list
 		for (int l = 0; l < filters.size(); l++) {
 
+			//Iterate through the filters and input, calling "compute" to
+			//apply each filter at the correct location in turn.
+			//We are only working at a depth of 0 because the "compute" function 
+			//will iterate through the full depth of the filters).
+
 			// Row
 			for (int j = 0; j < output[0].length; j += step) {
 				// Column
 				for (int k = 0; k < output[0][0].length; k += step) {
-					output[l][(j / step)][(k / step)] = compute(filters.get(l), input, k, j, 0, biases.get(l));
+					output[l][(j / step)][(k / step)].value = compute(filters.get(l), input, k, j, 0, biases.get(l));
 
 				}
 			}
@@ -164,11 +183,10 @@ public class Layer {
 	}
 
 	/**
-	 * This function is used to compute the max pool of a layer TODO: add code
-	 * for padding. add input checking
+	 * This function is used to compute the max pool of a layer.
 	 * 
 	 * @param input
-	 *            the three dimensional array that contains the values of the
+	 *            the three dimensional array that contains the cells of the
 	 *            layer to be used in computation.
 	 * @param output
 	 *            the three dimensional array to hold the calculated values of
@@ -180,15 +198,20 @@ public class Layer {
 	 *            the size (f = width = height) of the section of input used in
 	 *            the pooling operation.
 	 */
-	public void pool(double[][][] input, double[][][] output, int step, int f) {
+	public void pool(NetworkCell[][][] input, NetworkCell[][][] output, int step, int f) {
 
+		//Iterate over the input, calling "computeMax" to pool at each location.
+		//Make sure not to go off the edge of the input "((j + f) < input[0].length)".
+		//(This check is not needed for depth because "computeMax" only operates on a
+		//single depth slice).
+		
 		// Depth
 		for (int l = 0; l < input.length; l++) {
 			// Row
 			for (int j = 0; (j + f) <= input[0].length; j += step) {
 				// Column
 				for (int k = 0; (k + f) <= input[0][0].length; k += step) {
-					output[l][(j / step)][(k / step)] = computeMax(input, k, j, l, f);
+					output[l][(j / step)][(k / step)].value = computeMax(input, k, j, l, f);
 
 				}
 
@@ -203,14 +226,14 @@ public class Layer {
 	 * layer.
 	 * 
 	 * @param input
-	 *            the three dimensional array that contains the values of the
+	 *            the three dimensional array that contains the cells of the
 	 *            layer to be used in computation.
 	 * @param filters
 	 *            the list of three dimensional filters to apply to the input
 	 *            layer
 	 * @param output
-	 *            the three dimensional array to hold the calculated values of
-	 *            the local computations.
+	 *            the three dimensional array to hold the calculated values in 
+	 *            cells of the local computations.
 	 * @param step
 	 *            the "step" of the input layer- the number of columns and rows
 	 *            between the filters
@@ -221,19 +244,23 @@ public class Layer {
 	 *            the list of biases to be applied to the input layer, in the
 	 *            same order as the list of filters.
 	 */
-	public void local(double[][][] input, LinkedList<double[][][]> filters, double[][][] output, int step, int padding,
+	public void local(NetworkCell[][][] input, LinkedList<double[][][]> filters, NetworkCell[][][] output, int step, int padding,
 			LinkedList<Double> biases) {
 
-		int filterNum = 0;
+		int filterNum = 0;//This is used to iterate over the list of filters ("filters") and biases ("biases").
+		
+		//Iterate over the input, calling "compute" to calculate the result at each location.
+		//Make sure not to go off the edge of the input ("(l + filters.get(0).length) <= input.length").
+		
 		// Depth
 		for (int l = 0; (l + filters.get(0).length) <= input.length; l++) {
 			// Row
 			for (int j = 0; (j + filters.get(0)[0].length) <= input[0].length; j += step) {
 				// Column
 				for (int k = 0; (k + filters.get(0)[0][0].length) <= input[0][0].length; k += step) {
-					output[l][(j / step)][(k / step)] = compute(filters.get(filterNum), input, k, j, l,
+					output[l][(j / step)][(k / step)].value = compute(filters.get(filterNum), input, k, j, l,
 							biases.get(filterNum));
-					filterNum++;
+					filterNum++;//Make sure to increment this so that you use the next filter and bias each time.
 				}
 
 			}
@@ -246,14 +273,14 @@ public class Layer {
 	 * This function is used to calculate the fully connected output of a layer.
 	 * 
 	 * @param input
-	 *            the three dimensional array that contains the values of the
+	 *            the three dimensional array that contains the cells of the
 	 *            layer to be used in computation.
 	 * @param filters
 	 *            the list of three dimensional filters to apply to the input
 	 *            layer
 	 * @param output
-	 *            the three dimensional array to hold the calculated values of
-	 *            the local computations.
+	 *            the three dimensional array to hold the calculated values in
+	 *            cells of the local computations.
 	 * @param step
 	 *            the "step" of the input layer- the number of columns and rows
 	 *            between the filters
@@ -264,10 +291,14 @@ public class Layer {
 	 *            the list of biases to be applied to the input layer, in the
 	 *            same order as the list of filters.
 	 */
-	public void full(double[][][] input, LinkedList<double[][][]> filters, double[] output, int step, int padding,
+	public void full(NetworkCell[][][] input, LinkedList<double[][][]> filters, NetworkCell[] output, int step, int padding,
 			LinkedList<Double> biases) {
+		//Apply each filter to the input.
+		//Because this is a fully connected layer, each filter is applied to the entire input array,
+		// so we do not need to iterate over the input (the "compute" function will iterate through 
+		// the full depth of the filter).
 		for (int f = 0; f < filters.size(); f++) {
-			output[f] = compute(filters.get(f), input, 0, 0, 0, biases.get(f));
+			output[f].value = compute(filters.get(f), input, 0, 0, 0, biases.get(f));
 		}
 	}
 }

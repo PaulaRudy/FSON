@@ -19,169 +19,203 @@ import org.opencv.imgproc.Imgproc;
 import cnnetwork.FSONNetwork;
 import cnnetwork.Layer;
 import cnnetwork.LayerType;
+import cnnetwork.NetworkCell;
 import image.Align;
 
+/**
+ * This tests the functions declared in the cnnetwork.FSONNetwork.java file.
+ * This is to ensure proper functionality if the functions are modified.
+ *
+ */
 public class TestCNNFSONnetwork {
 	
 	Layer l1, l2, l3, l4, l5, l6, l7, l8;
-	double[] out;
+	NetworkCell[] out;
 	BufferedImage image;
 
 	@Before
 	public void setUp() throws Exception {
-		// file named here must be in same location as Align class file
+		
+		//The file named here must be in same location as Align class file
 		image = ImageIO.read(Align.class.getResource("print.jpg"));
 
+		//This is necessary to use any of the OpenCV functions
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 
+		//First, convert the image to an OpenCV Mat.
+		//This function can be found in image.Align.java
 		Mat test = Align.bufferedImageToMat(image);
 
+		//Next, resize the image to the size needed.
 		Mat resizedImage = new Mat();
 		Size sz = new Size(76, 76);
 		Imgproc.resize(test, resizedImage, sz);
 
+		//Split the image into three color channels
 		List<Mat> channels = new ArrayList<Mat>(3);// Channels are stored here in the order RGB
 		Core.split(resizedImage, channels);
 
+		//Declare and initialize the first layer
 		Layer l1 = new Layer(76, 76, 3, 5, 5, 3, 32, 1, 0, LayerType.CONV);
 
+		//Create and initialize the filters
 		for (int i = 0; i < l1.K; i++) {
 			double[][][] newFilter = new double[l1.Fdepth][l1.Frows][l1.Fcollumns];
 			for (int x = 0; x < l1.Fdepth; x++) {
 				for (int y = 0; y < l1.Frows; y++) {
 					for (int z = 0; z < l1.Fcollumns; z++) {
-						newFilter[x][y][z] = 1;
+						newFilter[x][y][z] = 1; //Because this is a simple test, we're going to set every entry in the filter to 1.
 					}
 				}
 			}
 
-			l1.filters.add(newFilter);
-			double newBias = 1;
-			l1.biases.add(newBias);
+			l1.filters.add(newFilter);//Actually add the filter to the list of filters in the layer
+			double newBias = 1;//Create the bias for this filter
+			l1.biases.add(newBias);//Add the bias to the list of biases in the layer.
 		}
 
+		//Create the second layer.
+		//Because this is a maxpool layer, we don't need to worry about creating any filters or biases.
 		Layer l2 = new Layer(72, 72, 32, 3, 3, 32, 1, 2, 0, LayerType.MAXPOOL);
+		
+		//Create and initialize the third layer.
 		Layer l3 = new Layer(35, 35, 32, 5, 5, 32, 16, 1, 0, LayerType.CONV);
 
+		//Create and initialize the filters
 		for (int i = 0; i < l3.K; i++) {
 			double[][][] newFilter = new double[l3.Fdepth][l3.Frows][l3.Fcollumns];
 			for (int x = 0; x < l3.Fdepth; x++) {
 				for (int y = 0; y < l3.Frows; y++) {
 					for (int z = 0; z < l3.Fcollumns; z++) {
-						newFilter[x][y][z] = 0.5;
+						newFilter[x][y][z] = 0.5;//Here we are setting every entry in the filter to 0.5.
 					}
 				}
 			}
 
-			l3.filters.add(newFilter);
-			double newBias = 1;
-			l3.biases.add(newBias);
+			l3.filters.add(newFilter);//Actually add the filter to the list of filters in the layer
+			double newBias = 1;//Create the bias for this filter
+			l3.biases.add(newBias);//Add the bias to the list of biases in the layer.
 		}
 
+		//Create the fourth layer.
+		//Because this is a maxpool layer, we don't need to worry about creating any filters or biases.
 		Layer l4 = new Layer(31, 31, 16, 5, 5, 16, 1, 2, 0, LayerType.MAXPOOL);
+		
+		//Create and initialize the fifth layer.
 		Layer l5 = new Layer(14, 14, 16, 3, 3, 16, 16, 2, 0, LayerType.CONV);
 
+		//Create and initialize the filters
 		for (int i = 0; i < l5.K; i++) {
 			double[][][] newFilter = new double[l5.Fdepth][l5.Frows][l5.Fcollumns];
 			for (int x = 0; x < l5.Fdepth; x++) {
 				for (int y = 0; y < l5.Frows; y++) {
 					for (int z = 0; z < l5.Fcollumns; z++) {
-						newFilter[x][y][z] = 1;
+						newFilter[x][y][z] = 1;//Here we are setting every entry in the filter to 1.
 					}
 				}
 			}
 
-			l5.filters.add(newFilter);
-			double newBias = 1;
-			l5.biases.add(newBias);
+			l5.filters.add(newFilter);//Actually add the filter to the list of filters in the layer
+			double newBias = 1;//Create the bias for this filter
+			l5.biases.add(newBias);//Add the bias to the list of biases in the layer.
 		}
 
+		//Create and initialize the sixth layer.
+		//This one is a locally connected layer.
 		Layer l6 = new Layer(6, 6, 16, 3, 3, 1, 400, 1, 0, LayerType.LOCAL);
 
+		//Create and initialize the filters
 		for (int i = 0; i < l6.K; i++) {
 			double[][][] newFilter = new double[l6.Fdepth][l6.Frows][l6.Fcollumns];
 			for (int x = 0; x < l6.Fdepth; x++) {
 				for (int y = 0; y < l6.Frows; y++) {
 					for (int z = 0; z < l6.Fcollumns; z++) {
-						newFilter[x][y][z] = 0.5;
+						newFilter[x][y][z] = 0.5;//Here we are setting every entry in the filter to 0.5.
 					}
 				}
 			}
 
-			l6.filters.add(newFilter);
-			double newBias = 1;
-			l6.biases.add(newBias);
+			l6.filters.add(newFilter);//Actually add the filter to the list of filters in the layer
+			double newBias = 1;//Create the bias for this filter
+			l6.biases.add(newBias);//Add the bias to the list of biases in the layer.
 		}
 
+		//Create and initialize the seventh layer.
+		//This one is also a locally connected layer.
 		Layer l7 = new Layer(5, 5, 16, 5, 5, 16, 2048, 1, 0, LayerType.FULLY);
 
+		//Create and initialize the filters
 		for (int i = 0; i < l7.K; i++) {
 			double[][][] newFilter = new double[l7.Fdepth][l7.Frows][l7.Fcollumns];
 			for (int x = 0; x < l7.Fdepth; x++) {
 				for (int y = 0; y < l7.Frows; y++) {
 					for (int z = 0; z < l7.Fcollumns; z++) {
-						newFilter[x][y][z] = 1;
+						newFilter[x][y][z] = 1;//Here we are setting every entry in the filter to 1.
 					}
 				}
 			}
 
-			l7.filters.add(newFilter);
-			double newBias = 1;
-			l7.biases.add(newBias);
+			l7.filters.add(newFilter);//Actually add the filter to the list of filters in the layer
+			double newBias = 1;//Create the bias for this filter
+			l7.biases.add(newBias);//Add the bias to the list of biases in the layer.
 		}
 
+		//Create and initialize the eighth layer.
+		//This one is a fully connected layer.
 		Layer l8 = new Layer(2048, 1, 1, 2048, 1, 1, 2016, 1, 0, LayerType.FULLY);
 
+		//Create and initialize the filters
 		for (int i = 0; i < l8.K; i++) {
 			double[][][] newFilter = new double[l8.Fdepth][l8.Frows][l8.Fcollumns];
 			for (int x = 0; x < l8.Fdepth; x++) {
 				for (int y = 0; y < l8.Frows; y++) {
 					for (int z = 0; z < l8.Fcollumns; z++) {
-						newFilter[x][y][z] = 0.5;
+						newFilter[x][y][z] = 0.5;//Here we are setting every entry in the filter to 0.5.
 					}
 				}
 			}
 
-			l8.filters.add(newFilter);
-			double newBias = 1;
-			l8.biases.add(newBias);
+			l8.filters.add(newFilter);//Actually add the filter to the list of filters in the layer
+			double newBias = 1;//Create the bias for this filter
+			l8.biases.add(newBias);//Add the bias to the list of biases in the layer.
 		}
 
-		out = new double[2016];
-
+		//This is the last "layer": this will hold the output of the network
+		out = new NetworkCell[2016];
+		
+		// Don't forget to initialize the cells
+		for (int d = 0; d < 2016; d++) {
+			out[d] = new NetworkCell();
+		}
+		
+		//For each channel...
 		for (int i = 0; i < channels.size(); i++) {
 
+			//Feed the individual pixel values into a temporary array...
 			channels.get(i).convertTo(channels.get(i), CvType.CV_64FC3);
 			int size = (int) (channels.get(i).total() * channels.get(i).channels());
 			double[] temp = new double[size];
 			channels.get(i).get(0, 0, temp);
+			
+			//...and then into the cells of the first layer of the network.
 			for (int j = 0; j < 76; j++) {
 				for (int k = 0; k < 76; k++) {
-					l1.values[i][j][k] = temp[(j * 76) + k];
+					l1.cells[i][j][k].value = temp[(j * 76) + k];
 				}
 
 			}
 
 		}
 
-		channels.get(0).convertTo(channels.get(0), CvType.CV_8UC1);
-		double[] test2 = new double[(int) (channels.get(0).total() * channels.get(0).channels())];
-
-		for (int j = 0; j < 76; j++) {
-			for (int k = 0; k < 76; k++) {
-				test2[(j * 76) + k] = l1.values[0][j][k];
-			}
-
-		}
-
-		l1.convolution(l1.values, l1.filters, l2.values, l1.step, l1.pad, l1.biases);
-		l2.pool(l2.values, l3.values, l2.step, l2.Fcollumns);
-		l3.convolution(l3.values, l3.filters, l4.values, l3.step, l3.pad, l3.biases);
-		l4.pool(l4.values, l5.values, l4.step, l4.Fcollumns);
-		l5.convolution(l5.values, l5.filters, l6.values, l5.step, l5.pad, l5.biases);
-		l6.local(l6.values, l6.filters, l7.values, l6.step, l6.pad, l6.biases);
-		l7.full(l7.values, l7.filters, l8.values[0][0], l7.step, l7.pad, l7.biases);
-		l8.full(l8.values, l8.filters, out, l8.step, l8.pad, l8.biases);
+		//Call the appropriate functions to feed the input through the layers
+		l1.convolution(l1.cells, l1.filters, l2.cells, l1.step, l1.pad, l1.biases);
+		l2.pool(l2.cells, l3.cells, l2.step, l2.Fcollumns);
+		l3.convolution(l3.cells, l3.filters, l4.cells, l3.step, l3.pad, l3.biases);
+		l4.pool(l4.cells, l5.cells, l4.step, l4.Fcollumns);
+		l5.convolution(l5.cells, l5.filters, l6.cells, l5.step, l5.pad, l5.biases);
+		l6.local(l6.cells, l6.filters, l7.cells, l6.step, l6.pad, l6.biases);
+		l7.full(l7.cells, l7.filters, l8.cells[0][0], l7.step, l7.pad, l7.biases);
+		l8.full(l8.cells, l8.filters, out, l8.step, l8.pad, l8.biases);
 	}
 
 	@Test
@@ -190,8 +224,9 @@ public class TestCNNFSONnetwork {
 		
 		test.calculate(image);
 		
+		//Test that using the functions in FSONNetwork results in the same values as doing it manually
 		for (int i = 0; i < out.length; i++) {
-			assertEquals(out[i], test.out[i], 0);
+			assertEquals(out[i].value, test.out[i].value, 0);
 		}
 	}
 

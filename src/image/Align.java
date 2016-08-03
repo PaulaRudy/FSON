@@ -19,7 +19,7 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.CascadeClassifier;
 
 /**
- * This class contains all the code to preprocess a frame.
+ * This class contains all the code to pre-process an image.
  * 
  * @author Paula Rudy
  *
@@ -95,7 +95,7 @@ public class Align {
 	}
 
 	/**
-	 * Does what it says on the tin: Uses a Haar cascade to locate any potential
+	 * This function uses a Haar cascade to locate any potential
 	 * noses in the image passed in as "face"
 	 * 
 	 * @param face
@@ -142,8 +142,8 @@ public class Align {
 	}
 
 	/**
-	 * Does what it says on the tin: Using a haar cascade classifier, detect the
-	 * locations of any potential eyes found in the image passed in as "face".
+	 * Using a haar cascade classifier, detect the locations of any potential
+	 * eyes found in the image passed in as "face".
 	 * 
 	 * @param face
 	 *            The image to find eyes in. Must be CvType.CV_8UC4.
@@ -185,9 +185,9 @@ public class Align {
 	}
 
 	/**
-	 * Does what it says on the tin: Given an image (passed in as
-	 * "aInputFrame"), use a haar cascade classifier to find the location of any
-	 * potential "faces" within that image.
+	 * Given an image (passed in as "aInputFrame"), use a haar cascade
+	 * classifier to find the location of any potential "faces" within that
+	 * image.
 	 * 
 	 * @param aInputFrame
 	 *            The image to find faces in. Must be CvType.CV_8UC4.
@@ -221,8 +221,7 @@ public class Align {
 	}
 
 	/**
-	 * Does what it says on the tin: Converts a jpg to an OpenCV "Mat" and
-	 * returns it.
+	 * Converts a .jpg to an OpenCV "Mat" and returns it.
 	 * 
 	 * NOTE: Make sure System.loadLibrary(Core.NATIVE_LIBRARY_NAME); has been
 	 * called before using this.
@@ -241,7 +240,6 @@ public class Align {
 	}
 
 	/**
-	 * Does what it says on the tin. 
 	 * Writes an OpenCV CvType.CV_8UC3 Mat to a .jpg
 	 * 
 	 * NOTE: Make sure System.loadLibrary(Core.NATIVE_LIBRARY_NAME); has been
@@ -252,7 +250,7 @@ public class Align {
 	}
 
 	/**
-	 * Does what it says on the tin. Writes a BufferedImage to a .jpg file.
+	 * Writes a BufferedImage to a .jpg file.
 	 * 
 	 */
 	public static void writeBuffImageToJpgFile(BufferedImage toWrite, String filename) throws IOException {
@@ -292,11 +290,12 @@ public class Align {
 				arctan = Math.atan(deltaY / deltaX);
 			}
 
+			//This is the rotation matrix that will be used to transform the image
 			Mat rotationMatrix = Imgproc.getRotationMatrix2D(new Point(image.width() / 2, image.height() / 2),
 					Math.toDegrees(arctan), 1.0);
 
 			Mat result = image.clone();
-			Imgproc.warpAffine(image, result, rotationMatrix, result.size());
+			Imgproc.warpAffine(image, result, rotationMatrix, result.size());//This is where the rotation matrix is applied.
 			return result;
 		}
 	}

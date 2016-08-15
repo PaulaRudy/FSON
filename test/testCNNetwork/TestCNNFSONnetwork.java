@@ -19,7 +19,6 @@ import org.opencv.imgproc.Imgproc;
 import cnnetwork.FSONNetwork;
 import cnnetwork.Layer;
 import cnnetwork.LayerType;
-import cnnetwork.NetworkCell;
 import image.Align;
 
 /**
@@ -30,7 +29,7 @@ import image.Align;
 public class TestCNNFSONnetwork {
 	
 	Layer l1, l2, l3, l4, l5, l6, l7, l8;
-	NetworkCell[] out;
+	double[] out;
 	BufferedImage image;
 
 	@Before
@@ -181,12 +180,7 @@ public class TestCNNFSONnetwork {
 		}
 
 		//This is the last "layer": this will hold the output of the network
-		out = new NetworkCell[2016];
-		
-		// Don't forget to initialize the cells
-		for (int d = 0; d < 2016; d++) {
-			out[d] = new NetworkCell();
-		}
+		out = new double[2016];
 		
 		//For each channel...
 		for (int i = 0; i < channels.size(); i++) {
@@ -200,7 +194,7 @@ public class TestCNNFSONnetwork {
 			//...and then into the cells of the first layer of the network.
 			for (int j = 0; j < 76; j++) {
 				for (int k = 0; k < 76; k++) {
-					l1.cells[i][j][k].value = temp[(j * 76) + k];
+					l1.cells[i][j][k] = temp[(j * 76) + k];
 				}
 
 			}
@@ -226,7 +220,7 @@ public class TestCNNFSONnetwork {
 		
 		//Test that using the functions in FSONNetwork results in the same values as doing it manually
 		for (int i = 0; i < out.length; i++) {
-			assertEquals(out[i].value, test.out[i].value, 0);
+			assertEquals(out[i], test.out[i], 0);
 		}
 	}
 

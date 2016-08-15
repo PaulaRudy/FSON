@@ -8,6 +8,7 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
+import cnnetwork.Filter;
 import cnnetwork.Layer;
 import cnnetwork.LayerType;
 
@@ -34,39 +35,45 @@ public class TestCNNObjectStructure {
 	@Test
 	public void testFilters() {
 
-		//Create and initialize the filters
-		double[][][] testFilter = new double[test.Fdepth][test.Frows][test.Fcollumns];
+		//Create and initialize the filters' weights
+		double[][][] testFilter1Weights = new double[test.Fdepth][test.Frows][test.Fcollumns];
 
-		testFilter[1][0][0] = 1.0;
+		testFilter1Weights[1][0][0] = 1.0;
 
-		double[][][] testFilter2 = new double[test.Fdepth][test.Frows][test.Fcollumns];
+		double[][][] testFilter2Weights = new double[test.Fdepth][test.Frows][test.Fcollumns];
 
-		testFilter2[0][1][0] = 1.0;
+		testFilter2Weights[0][1][0] = 1.0;
 
-		double[][][] testFilter3 = new double[test.Fdepth][test.Frows][test.Fcollumns];
+		double[][][] testFilter3Weights = new double[test.Fdepth][test.Frows][test.Fcollumns];
 
-		testFilter3[0][0][1] = 1.0;
+		testFilter3Weights[0][0][1] = 1.0;
 
-		double[][][] testFilter4 = new double[test.Fdepth][test.Frows][test.Fcollumns];
+		double[][][] testFilter4Weights = new double[test.Fdepth][test.Frows][test.Fcollumns];
 
-		testFilter4[2][2][2] = 1.0;
+		testFilter4Weights[2][2][2] = 1.0;
+		
+		//Actually create the filters
+		Filter testFilter1 = new Filter(testFilter1Weights);
+		Filter testFilter2 = new Filter(testFilter2Weights);
+		Filter testFilter3 = new Filter(testFilter3Weights);
+		Filter testFilter4 = new Filter(testFilter4Weights);
 
 		//Add the filters to the layer
-		test.filters.add(testFilter);
+		test.filters.add(testFilter1);
 		test.filters.add(testFilter2);
 		test.filters.add(testFilter3);
 		test.filters.add(testFilter4);
 
 		//Test that the filters are still there and in the right place 
-		assertEquals(test.filters.get(0)[0][0][0], 0, 0);
-		assertEquals(test.filters.get(0)[1][0][0], 1, 0);
-		assertEquals(test.filters.get(1)[0][0][0], 0, 0);
-		assertEquals(test.filters.get(1)[0][1][0], 1, 0);
-		assertEquals(test.filters.get(2)[0][0][0], 0, 0);
-		assertEquals(test.filters.get(2)[0][0][1], 1, 0);
-		assertEquals(test.filters.get(3)[0][0][0], 0, 0);
-		assertEquals(test.filters.get(3)[2][2][2], 1, 0);
-		assertEquals(test.filters.get(0)[1][0][0], 1, 0);
+		assertEquals(test.filters.get(0).weights[0][0][0], 0, 0);
+		assertEquals(test.filters.get(0).weights[1][0][0], 1, 0);
+		assertEquals(test.filters.get(1).weights[0][0][0], 0, 0);
+		assertEquals(test.filters.get(1).weights[0][1][0], 1, 0);
+		assertEquals(test.filters.get(2).weights[0][0][0], 0, 0);
+		assertEquals(test.filters.get(2).weights[0][0][1], 1, 0);
+		assertEquals(test.filters.get(3).weights[0][0][0], 0, 0);
+		assertEquals(test.filters.get(3).weights[2][2][2], 1, 0);
+		assertEquals(test.filters.get(0).weights[1][0][0], 1, 0);
 	}
 
 	/**

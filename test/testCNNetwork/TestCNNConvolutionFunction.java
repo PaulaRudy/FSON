@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
+import cnnetwork.Filter;
 import cnnetwork.Layer;
 import cnnetwork.LayerType;
 
@@ -16,8 +17,8 @@ public class TestCNNConvolutionFunction {
 
 	Layer testLayer;
 
-	double[][][] testFilter0, testFilter1, testFilter2, testFilter3;
-
+	Filter testFilter0, testFilter1, testFilter2, testFilter3;
+	
 	double testBias0, testBias1, testBias2, testBias3;
 
 	double[][][] testOut;
@@ -69,26 +70,27 @@ public class TestCNNConvolutionFunction {
 		testLayer.cells[2][2][2] = 1;
 
 		//Create and initialize the first filter
-		testFilter0 = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
+		double[][][] testFilter0Weights = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
 
-		testFilter0[0][0][0] = 1;
-		testFilter0[0][0][1] = 1;
+		testFilter0Weights[0][0][0] = 1;
+		testFilter0Weights[0][0][1] = 1;
 
-		testFilter0[0][1][0] = 0;
-		testFilter0[0][1][1] = 1;
+		testFilter0Weights[0][1][0] = 0;
+		testFilter0Weights[0][1][1] = 1;
 
-		testFilter0[1][0][0] = 1;
-		testFilter0[1][0][1] = -1;
+		testFilter0Weights[1][0][0] = 1;
+		testFilter0Weights[1][0][1] = -1;
 
-		testFilter0[1][1][0] = 0;
-		testFilter0[1][1][1] = -1;
+		testFilter0Weights[1][1][0] = 0;
+		testFilter0Weights[1][1][1] = -1;
 
-		testFilter0[2][0][0] = -1;
-		testFilter0[2][0][1] = 1;
+		testFilter0Weights[2][0][0] = -1;
+		testFilter0Weights[2][0][1] = 1;
 
-		testFilter0[2][1][0] = -1;
-		testFilter0[2][1][1] = 1;
+		testFilter0Weights[2][1][0] = -1;
+		testFilter0Weights[2][1][1] = 1;
 
+		testFilter0 = new Filter(testFilter0Weights);
 		testLayer.filters.add(testFilter0);//Add the filter to the list of filters in the layer
 
 		testBias0 = 1;//Create a bias
@@ -96,26 +98,27 @@ public class TestCNNConvolutionFunction {
 		testLayer.biases.add(testBias0); //Add the bias to the list of biases in the layer
 
 		//Create and initialize the second filter
-		testFilter1 = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
+		double[][][] testFilter1Weights = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
 
-		testFilter1[0][0][0] = -1;
-		testFilter1[0][0][1] = -1;
+		testFilter1Weights[0][0][0] = -1;
+		testFilter1Weights[0][0][1] = -1;
 
-		testFilter1[0][1][0] = 1;
-		testFilter1[0][1][1] = 0;
+		testFilter1Weights[0][1][0] = 1;
+		testFilter1Weights[0][1][1] = 0;
 
-		testFilter1[1][0][0] = 1;
-		testFilter1[1][0][1] = 1;
+		testFilter1Weights[1][0][0] = 1;
+		testFilter1Weights[1][0][1] = 1;
 
-		testFilter1[1][1][0] = -1;
-		testFilter1[1][1][1] = 0;
+		testFilter1Weights[1][1][0] = -1;
+		testFilter1Weights[1][1][1] = 0;
 
-		testFilter1[2][0][0] = 1;
-		testFilter1[2][0][1] = 1;
+		testFilter1Weights[2][0][0] = 1;
+		testFilter1Weights[2][0][1] = 1;
 
-		testFilter1[2][1][0] = -1;
-		testFilter1[2][1][1] = 1;
+		testFilter1Weights[2][1][0] = -1;
+		testFilter1Weights[2][1][1] = 1;
 
+		testFilter1 = new Filter(testFilter1Weights);
 		testLayer.filters.add(testFilter1);//Add the filter to the list of filters in the layer
 
 		testBias1 = 0;//Create a bias
@@ -123,26 +126,27 @@ public class TestCNNConvolutionFunction {
 		testLayer.biases.add(testBias1); //Add the bias to the list of biases in the layer
 
 		//Create and initialize the third filter
-		testFilter2 = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
+		double[][][] testFilter2Weights = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
 
-		testFilter2[0][0][0] = 0;
-		testFilter2[0][0][1] = 0;
+		testFilter2Weights[0][0][0] = 0;
+		testFilter2Weights[0][0][1] = 0;
 
-		testFilter2[0][1][0] = 1;
-		testFilter2[0][1][1] = 0;
+		testFilter2Weights[0][1][0] = 1;
+		testFilter2Weights[0][1][1] = 0;
 
-		testFilter2[1][0][0] = 0;
-		testFilter2[1][0][1] = 0;
+		testFilter2Weights[1][0][0] = 0;
+		testFilter2Weights[1][0][1] = 0;
 
-		testFilter2[1][1][0] = -1;
-		testFilter2[1][1][1] = -1;
+		testFilter2Weights[1][1][0] = -1;
+		testFilter2Weights[1][1][1] = -1;
 
-		testFilter2[2][0][0] = 0;
-		testFilter2[2][0][1] = 1;
+		testFilter2Weights[2][0][0] = 0;
+		testFilter2Weights[2][0][1] = 1;
 
-		testFilter2[2][1][0] = -1;
-		testFilter2[2][1][1] = 0;
+		testFilter2Weights[2][1][0] = -1;
+		testFilter2Weights[2][1][1] = 0;
 
+		testFilter2 = new Filter(testFilter2Weights);
 		testLayer.filters.add(testFilter2);//Add the filter to the list of filters in the layer
 
 		testBias2 = -1; //Create a bias
@@ -150,26 +154,27 @@ public class TestCNNConvolutionFunction {
 		testLayer.biases.add(testBias2);//Add the bias to the list of biases in the layer
 
 		//Create and initialize the fourth filter
-		testFilter3 = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
+		double[][][] testFilter3Weights = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
 
-		testFilter3[0][0][0] = 0;
-		testFilter3[0][0][1] = 0;
+		testFilter3Weights[0][0][0] = 0;
+		testFilter3Weights[0][0][1] = 0;
 
-		testFilter3[0][1][0] = 0;
-		testFilter3[0][1][1] = -1;
+		testFilter3Weights[0][1][0] = 0;
+		testFilter3Weights[0][1][1] = -1;
 
-		testFilter3[1][0][0] = 1;
-		testFilter3[1][0][1] = 0;
+		testFilter3Weights[1][0][0] = 1;
+		testFilter3Weights[1][0][1] = 0;
 
-		testFilter3[1][1][0] = 0;
-		testFilter3[1][1][1] = 0;
+		testFilter3Weights[1][1][0] = 0;
+		testFilter3Weights[1][1][1] = 0;
 
-		testFilter3[2][0][0] = 0;
-		testFilter3[2][0][1] = 0;
+		testFilter3Weights[2][0][0] = 0;
+		testFilter3Weights[2][0][1] = 0;
 
-		testFilter3[2][1][0] = 1;
-		testFilter3[2][1][1] = 0;
+		testFilter3Weights[2][1][0] = 1;
+		testFilter3Weights[2][1][1] = 0;
 
+		testFilter3 = new Filter(testFilter3Weights);
 		testLayer.filters.add(testFilter3); //Add the filter to the list of filters in the layer
 
 		testBias3 = -2;//Create a bias

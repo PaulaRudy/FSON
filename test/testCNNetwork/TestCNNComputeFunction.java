@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
+import cnnetwork.Filter;
 import cnnetwork.Layer;
 import cnnetwork.LayerType;
 
@@ -15,7 +16,7 @@ import cnnetwork.LayerType;
 public class TestCNNComputeFunction {
 
 	Layer testLayer;
-	double[][][] testFilter;
+	double[][][] testFilterWeights;
 	
 	double testBias;
 
@@ -66,27 +67,29 @@ public class TestCNNComputeFunction {
 		testLayer.cells[2][2][1] = 1;
 		testLayer.cells[2][2][2] = 1;
 
-		//Create and initialize the filter
-		testFilter = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
+		//Create and initialize the filter weights
+		testFilterWeights = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
 
 		//Set the weights (entries in the filter)
-		testFilter[0][0][0] = 1;
-		testFilter[0][0][1] = 1;
+		testFilterWeights[0][0][0] = 1;
+		testFilterWeights[0][0][1] = 1;
 
-		testFilter[0][1][0] = 0;
-		testFilter[0][1][1] = 1;
+		testFilterWeights[0][1][0] = 0;
+		testFilterWeights[0][1][1] = 1;
 
-		testFilter[1][0][0] = 1;
-		testFilter[1][0][1] = -1;
+		testFilterWeights[1][0][0] = 1;
+		testFilterWeights[1][0][1] = -1;
 
-		testFilter[1][1][0] = 0;
-		testFilter[1][1][1] = -1;
+		testFilterWeights[1][1][0] = 0;
+		testFilterWeights[1][1][1] = -1;
 
-		testFilter[2][0][0] = -1;
-		testFilter[2][0][1] = 1;
+		testFilterWeights[2][0][0] = -1;
+		testFilterWeights[2][0][1] = 1;
 
-		testFilter[2][1][0] = -1;
-		testFilter[2][1][1] = 1;
+		testFilterWeights[2][1][0] = -1;
+		testFilterWeights[2][1][1] = 1;
+		
+		Filter testFilter = new Filter(testFilterWeights);//Create the filter with the newly made weights
 
 		testLayer.filters.add(testFilter);//Actually add the filter to the list of filters in the layer
 

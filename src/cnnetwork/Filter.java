@@ -3,11 +3,11 @@ package cnnetwork;
 import java.util.LinkedList;
 
 public class Filter {
-	double[][][] weights;// The actual stored weights of this filter
-	String equationAtFilter;// The equation used to calculate an output for this
+	public double[][][] weights;// The actual stored weights of this filter
+	public String equationAtFilter;// The equation used to calculate an output for this
 							// filter, stored in string form to be used with
 							// JavaCalculus
-	LinkedList<FilterConnection> connections;// A list of connections that use
+	public LinkedList<FilterConnection> connections;// A list of connections that use
 												// this filter, to be used in
 												// backpropagation.
 

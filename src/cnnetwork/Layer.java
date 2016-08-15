@@ -25,7 +25,7 @@ public class Layer {
 		this.step = step;
 		this.pad = pad;
 		this.biases = new LinkedList<Double>();
-		this.filters = new LinkedList<double[][][]>();
+		this.filters = new LinkedList<Filter>();
 		this.type = type;
 		this.cells = new double[depth][rows][collumns];
 	
@@ -41,7 +41,7 @@ public class Layer {
 	public int step;// The "step" of the layer- the number of columns and rows between the filters
 	public int pad;// The number of zeros appended to the rows and columns at the edge of the layer when applying the filters.
 	public LinkedList<Double> biases;// The list of biases to be applied, in the same order as the list of filters.
-	public LinkedList<double[][][]> filters;// The list of filters to be applied, in the same order as the list of biases.
+	public LinkedList<Filter> filters;// The list of filters to be applied, in the same order as the list of biases.
 	public final LayerType type;// The type of this layer. This determines how the values for the next layer are calculated.
 	public double[][][] cells;// The actual 3 dimensional array that stores the cells for this layer.
 	
@@ -66,15 +66,15 @@ public class Layer {
 	 *            the bias to be used in this computation.
 	 * @return the newly computed value to be stored into the next layer.
 	 */
-	public double compute(double[][][] filter, double[][][] input, int column, int row, int depth, double bias) {
+	public double compute(Filter filter, double[][][] input, int column, int row, int depth, double bias) {
 		double result = 0.0;
 
 		//For every cell in the input array, using depth, row, and column as the starting point,
 		//multiply that value by the corresponding entry in the filter, and add it to the result
-		for (int i = 0; i < filter.length; i++) {
-			for (int j = 0; j < filter[0].length; j++) {
-				for (int k = 0; k < filter[0][0].length; k++) {
-					result += input[(depth + i)][(row + j)][(column + k)] * filter[i][j][k];
+		for (int i = 0; i < filter.weights.length; i++) {
+			for (int j = 0; j < filter.weights[0].length; j++) {
+				for (int k = 0; k < filter.weights[0][0].length; k++) {
+					result += input[(depth + i)][(row + j)][(column + k)] * filter.weights[i][j][k];
 				}
 			}
 
@@ -147,7 +147,7 @@ public class Layer {
 	 *            the list of biases to be applied to the input layer, in the
 	 *            same order as the list of filters.
 	 */
-	public void convolution(double[][][] input, LinkedList<double[][][]> filters, double[][][] output, int step,
+	public void convolution(double[][][] input, LinkedList<Filter> filters, double[][][] output, int step,
 			int padding, LinkedList<Double> biases) {
 
 		// For every filter and bias in the list
@@ -232,7 +232,7 @@ public class Layer {
 	 *            the list of biases to be applied to the input layer, in the
 	 *            same order as the list of filters.
 	 */
-	public void local(double[][][] input, LinkedList<double[][][]> filters, double[][][] output, int step, int padding,
+	public void local(double[][][] input, LinkedList<Filter> filters, double[][][] output, int step, int padding,
 			LinkedList<Double> biases) {
 
 		int filterNum = 0;//This is used to iterate over the list of filters ("filters") and biases ("biases").
@@ -241,11 +241,11 @@ public class Layer {
 		//Make sure not to go off the edge of the input ("(l + filters.get(0).length) <= input.length").
 		
 		// Depth
-		for (int l = 0; (l + filters.get(0).length) <= input.length; l++) {
+		for (int l = 0; (l + filters.get(0).weights.length) <= input.length; l++) {
 			// Row
-			for (int j = 0; (j + filters.get(0)[0].length) <= input[0].length; j += step) {
+			for (int j = 0; (j + filters.get(0).weights[0].length) <= input[0].length; j += step) {
 				// Column
-				for (int k = 0; (k + filters.get(0)[0][0].length) <= input[0][0].length; k += step) {
+				for (int k = 0; (k + filters.get(0).weights[0][0].length) <= input[0][0].length; k += step) {
 					output[l][(j / step)][(k / step)] = compute(filters.get(filterNum), input, k, j, l,
 							biases.get(filterNum));
 					filterNum++;//Make sure to increment this so that you use the next filter and bias each time.
@@ -279,7 +279,7 @@ public class Layer {
 	 *            the list of biases to be applied to the input layer, in the
 	 *            same order as the list of filters.
 	 */
-	public void full(double[][][] input, LinkedList<double[][][]> filters, double[] output, int step, int padding,
+	public void full(double[][][] input, LinkedList<Filter> filters, double[] output, int step, int padding,
 			LinkedList<Double> biases) {
 		//Apply each filter to the input.
 		//Because this is a fully connected layer, each filter is applied to the entire input array,

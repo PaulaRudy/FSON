@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
+import cnnetwork.Filter;
 import cnnetwork.Layer;
 import cnnetwork.LayerType;
 
@@ -16,7 +17,7 @@ public class TestCNNLocalFunction {
 
 	Layer testLayer;
 
-	double[][][] testFilter0, testFilter1, testFilter2, testFilter3, testFilter4, testFilter5, testFilter6, testFilter7,
+	Filter testFilter0, testFilter1, testFilter2, testFilter3, testFilter4, testFilter5, testFilter6, testFilter7,
 			testFilter8, testFilter9, testFilter10, testFilter11;
 
 	double testBias0, testBias1, testBias2, testBias3, testBias4, testBias5, testBias6, testBias7, testBias8, testBias9,
@@ -70,38 +71,43 @@ public class TestCNNLocalFunction {
 		testLayer.cells[2][2][1] = 1;
 		testLayer.cells[2][2][2] = 1;
 
-		//Create and initialize the first filter
-		testFilter0 = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
+		//Create and initialize the first filter's weights
+		double[][][] testFilter0Weights = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
 
-		testFilter0[0][0][0] = 1;
-		testFilter0[0][0][1] = 1;
+		testFilter0Weights[0][0][0] = 1;
+		testFilter0Weights[0][0][1] = 1;
 
-		testFilter0[0][1][0] = 0;
-		testFilter0[0][1][1] = 1;
+		testFilter0Weights[0][1][0] = 0;
+		testFilter0Weights[0][1][1] = 1;
 
-		//Create and initialize the second filter
-		testFilter1 = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
+		//Create and initialize the second filter's weights
+		double[][][] testFilter1Weights = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
 
-		testFilter1[0][0][0] = -1;
-		testFilter1[0][0][1] = -1;
+		testFilter1Weights[0][0][0] = -1;
+		testFilter1Weights[0][0][1] = -1;
 
-		testFilter1[0][1][0] = 1;
-		testFilter1[0][1][1] = 0;
+		testFilter1Weights[0][1][0] = 1;
+		testFilter1Weights[0][1][1] = 0;
 
-		//Create and initialize the third filter
-		testFilter2 = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
+		//Create and initialize the third filter's weights
+		double[][][] testFilter2Weights = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
 
-		testFilter2[0][0][0] = 0;
-		testFilter2[0][0][1] = 0;
+		testFilter2Weights[0][0][0] = 0;
+		testFilter2Weights[0][0][1] = 0;
 
-		testFilter2[0][1][0] = 1;
-		testFilter2[0][1][1] = 0;
+		testFilter2Weights[0][1][0] = 1;
+		testFilter2Weights[0][1][1] = 0;
 
+		//Actually create the first three filters
+		testFilter0 = new Filter(testFilter0Weights);
+		testFilter1 = new Filter(testFilter1Weights);
+		testFilter2 = new Filter(testFilter2Weights);
+		
 		//Add the filters to the list of filters in the layer
 		testLayer.filters.add(testFilter0);
 		testLayer.filters.add(testFilter1);
 		testLayer.filters.add(testFilter2);
-
+		
 		//Create the biases for the first three filters
 		testBias0 = 1;
 		testBias1 = 0;
@@ -112,33 +118,38 @@ public class TestCNNLocalFunction {
 		testLayer.biases.add(testBias1);
 		testLayer.biases.add(testBias2);
 
-		//Create and initialize the fourth filter
-		testFilter3 = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
+		//Create and initialize the fourth filter's weights
+		double[][][] testFilter3Weights = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
 
-		testFilter3[0][0][0] = 0;
-		testFilter3[0][0][1] = 0;
+		testFilter3Weights[0][0][0] = 0;
+		testFilter3Weights[0][0][1] = 0;
 
-		testFilter3[0][1][0] = 0;
-		testFilter3[0][1][1] = -1;
+		testFilter3Weights[0][1][0] = 0;
+		testFilter3Weights[0][1][1] = -1;
 
-		//Create and initialize the fifth filter
-		testFilter4 = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
+		//Create and initialize the fifth filter's weights
+		double[][][] testFilter4Weights = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
 
-		testFilter4[0][0][0] = 1;
-		testFilter4[0][0][1] = -1;
+		testFilter4Weights[0][0][0] = 1;
+		testFilter4Weights[0][0][1] = -1;
 
-		testFilter4[0][1][0] = 0;
-		testFilter4[0][1][1] = -1;
+		testFilter4Weights[0][1][0] = 0;
+		testFilter4Weights[0][1][1] = -1;
 
-		//Create and initialize the sixth filter
-		testFilter5 = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
+		//Create and initialize the sixth filter's weights
+		double[][][] testFilter5Weights = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
 
-		testFilter5[0][0][0] = 1;
-		testFilter5[0][0][1] = 1;
+		testFilter5Weights[0][0][0] = 1;
+		testFilter5Weights[0][0][1] = 1;
 
-		testFilter5[0][1][0] = -1;
-		testFilter5[0][1][1] = 0;
+		testFilter5Weights[0][1][0] = -1;
+		testFilter5Weights[0][1][1] = 0;
 
+		//Actually create filters 4, 5 and 6
+		testFilter3 = new Filter(testFilter3Weights);
+		testFilter4 = new Filter(testFilter4Weights);
+		testFilter5 = new Filter(testFilter5Weights);
+				
 		//Add the filters to the list of filters in the layer
 		testLayer.filters.add(testFilter3);
 		testLayer.filters.add(testFilter4);
@@ -154,33 +165,38 @@ public class TestCNNLocalFunction {
 		testLayer.biases.add(testBias4);
 		testLayer.biases.add(testBias5);
 
-		//Create and initialize the seventh filter
-		testFilter6 = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
+		//Create and initialize the seventh filter's weights
+		double[][][] testFilter6Weights = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
 
-		testFilter6[0][0][0] = 0;
-		testFilter6[0][0][1] = 0;
+		testFilter6Weights[0][0][0] = 0;
+		testFilter6Weights[0][0][1] = 0;
 
-		testFilter6[0][1][0] = -1;
-		testFilter6[0][1][1] = -1;
+		testFilter6Weights[0][1][0] = -1;
+		testFilter6Weights[0][1][1] = -1;
 
-		//Create and initialize the eighth filter
-		testFilter7 = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
+		//Create and initialize the eighth filter's weights
+		double[][][] testFilter7Weights = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
 
-		testFilter7[0][0][0] = 1;
-		testFilter7[0][0][1] = 0;
+		testFilter7Weights[0][0][0] = 1;
+		testFilter7Weights[0][0][1] = 0;
 
-		testFilter7[0][1][0] = 0;
-		testFilter7[0][1][1] = 0;
+		testFilter7Weights[0][1][0] = 0;
+		testFilter7Weights[0][1][1] = 0;
 
-		//Create and initialize the ninth filter
-		testFilter8 = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
+		//Create and initialize the ninth filter's weights
+		double[][][] testFilter8Weights = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
 
-		testFilter8[0][0][0] = -1;
-		testFilter8[0][0][1] = 1;
+		testFilter8Weights[0][0][0] = -1;
+		testFilter8Weights[0][0][1] = 1;
 
-		testFilter8[0][1][0] = -1;
-		testFilter8[0][1][1] = 1;
+		testFilter8Weights[0][1][0] = -1;
+		testFilter8Weights[0][1][1] = 1;
 
+		//Actually create filters 7, 8 and 9
+		testFilter6 = new Filter(testFilter6Weights);
+		testFilter7 = new Filter(testFilter7Weights);
+		testFilter8 = new Filter(testFilter8Weights);
+		
 		//Add the filters to the list of filters in the layer
 		testLayer.filters.add(testFilter6);
 		testLayer.filters.add(testFilter7);
@@ -196,32 +212,37 @@ public class TestCNNLocalFunction {
 		testLayer.biases.add(testBias7);
 		testLayer.biases.add(testBias8);
 
-		//Create and initialize the tenth filter
-		testFilter9 = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
+		//Create and initialize the tenth filter's weights
+		double[][][] testFilter9Weights = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
 
-		testFilter9[0][0][0] = 1;
-		testFilter9[0][0][1] = 1;
+		testFilter9Weights[0][0][0] = 1;
+		testFilter9Weights[0][0][1] = 1;
 
-		testFilter9[0][1][0] = -1;
-		testFilter9[0][1][1] = 1;
+		testFilter9Weights[0][1][0] = -1;
+		testFilter9Weights[0][1][1] = 1;
 
-		//Create and initialize the eleventh filter
-		testFilter10 = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
+		//Create and initialize the eleventh filter's weights
+		double[][][] testFilter10Weights = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
 
-		testFilter10[0][0][0] = 0;
-		testFilter10[0][0][1] = 1;
+		testFilter10Weights[0][0][0] = 0;
+		testFilter10Weights[0][0][1] = 1;
 
-		testFilter10[0][1][0] = -1;
-		testFilter10[0][1][1] = 0;
+		testFilter10Weights[0][1][0] = -1;
+		testFilter10Weights[0][1][1] = 0;
 
-		//Create and initialize the twelfth filter
-		testFilter11 = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
+		//Create and initialize the twelfth filter's weights
+		double[][][] testFilter11Weights = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
 
-		testFilter11[0][0][0] = 0;
-		testFilter11[0][0][1] = 0;
+		testFilter11Weights[0][0][0] = 0;
+		testFilter11Weights[0][0][1] = 0;
 
-		testFilter11[0][1][0] = 1;
-		testFilter11[0][1][1] = 0;
+		testFilter11Weights[0][1][0] = 1;
+		testFilter11Weights[0][1][1] = 0;
+		
+		//Actually create the last three filters (#s 10, 11, and 12)
+		testFilter9 = new Filter(testFilter9Weights);
+		testFilter10 = new Filter(testFilter10Weights);
+		testFilter11 = new Filter(testFilter11Weights);
 
 		//Add the filters to the list of filters in the layer
 		testLayer.filters.add(testFilter9);

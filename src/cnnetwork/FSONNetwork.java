@@ -42,15 +42,17 @@ public class FSONNetwork {
 
 		//Create and initialize the filters
 		for (int i = 0; i < l1.K; i++) {
-			double[][][] newFilter = new double[l1.Fdepth][l1.Frows][l1.Fcollumns];
+			//Create the filter weights
+			double[][][] newFilterWeights = new double[l1.Fdepth][l1.Frows][l1.Fcollumns];
 			for (int x = 0; x < l1.Fdepth; x++) {
 				for (int y = 0; y < l1.Frows; y++) {
 					for (int z = 0; z < l1.Fcollumns; z++) {
-						newFilter[x][y][z] = 1; //Because this is a simple test, we're going to set every entry in the filter to 1.
+						newFilterWeights[x][y][z] = 1; //Because this is a simple test, we're going to set every entry in the filter to 1.
 					}
 				}
 			}
 
+			Filter newFilter = new Filter(newFilterWeights);//Use the default constructor with the newly created filter weights
 			l1.filters.add(newFilter);//Actually add the filter to the list of filters in the layer
 			double newBias = 1;//Create the bias for this filter
 			l1.biases.add(newBias);//Add the bias to the list of biases in the layer.
@@ -65,15 +67,17 @@ public class FSONNetwork {
 
 		//Create and initialize the filters
 		for (int i = 0; i < l3.K; i++) {
-			double[][][] newFilter = new double[l3.Fdepth][l3.Frows][l3.Fcollumns];
+			//Create the filter weights
+			double[][][] newFilterWeights = new double[l3.Fdepth][l3.Frows][l3.Fcollumns];
 			for (int x = 0; x < l3.Fdepth; x++) {
 				for (int y = 0; y < l3.Frows; y++) {
 					for (int z = 0; z < l3.Fcollumns; z++) {
-						newFilter[x][y][z] = 0.5;//Here we are setting every entry in the filter to 0.5.
+						newFilterWeights[x][y][z] = 0.5;//Here we are setting every entry in the filter to 0.5.
 					}
 				}
 			}
 
+			Filter newFilter = new Filter(newFilterWeights);//Use the default constructor with the newly created filter weights
 			l3.filters.add(newFilter);//Actually add the filter to the list of filters in the layer
 			double newBias = 1;//Create the bias for this filter
 			l3.biases.add(newBias);//Add the bias to the list of biases in the layer.
@@ -88,15 +92,17 @@ public class FSONNetwork {
 
 		//Create and initialize the filters
 		for (int i = 0; i < l5.K; i++) {
-			double[][][] newFilter = new double[l5.Fdepth][l5.Frows][l5.Fcollumns];
+			//Create the filter weights
+			double[][][] newFilterWeights = new double[l5.Fdepth][l5.Frows][l5.Fcollumns];
 			for (int x = 0; x < l5.Fdepth; x++) {
 				for (int y = 0; y < l5.Frows; y++) {
 					for (int z = 0; z < l5.Fcollumns; z++) {
-						newFilter[x][y][z] = 1;//Here we are setting every entry in the filter to 1.
+						newFilterWeights[x][y][z] = 1;//Here we are setting every entry in the filter to 1.
 					}
 				}
 			}
 
+			Filter newFilter = new Filter(newFilterWeights);//Use the default constructor with the newly created filter weights
 			l5.filters.add(newFilter);//Actually add the filter to the list of filters in the layer
 			double newBias = 1;//Create the bias for this filter
 			l5.biases.add(newBias);//Add the bias to the list of biases in the layer.
@@ -108,15 +114,17 @@ public class FSONNetwork {
 
 		//Create and initialize the filters
 		for (int i = 0; i < l6.K; i++) {
-			double[][][] newFilter = new double[l6.Fdepth][l6.Frows][l6.Fcollumns];
+			//Create the filter weights
+			double[][][] newFilterWeights = new double[l6.Fdepth][l6.Frows][l6.Fcollumns];
 			for (int x = 0; x < l6.Fdepth; x++) {
 				for (int y = 0; y < l6.Frows; y++) {
 					for (int z = 0; z < l6.Fcollumns; z++) {
-						newFilter[x][y][z] = 0.5;//Here we are setting every entry in the filter to 0.5.
+						newFilterWeights[x][y][z] = 0.5;//Here we are setting every entry in the filter to 0.5.
 					}
 				}
 			}
 
+			Filter newFilter = new Filter(newFilterWeights);//Use the default constructor with the newly created filter weights
 			l6.filters.add(newFilter);//Actually add the filter to the list of filters in the layer
 			double newBias = 1;//Create the bias for this filter
 			l6.biases.add(newBias);//Add the bias to the list of biases in the layer.
@@ -128,15 +136,17 @@ public class FSONNetwork {
 
 		//Create and initialize the filters
 		for (int i = 0; i < l7.K; i++) {
-			double[][][] newFilter = new double[l7.Fdepth][l7.Frows][l7.Fcollumns];
+			//Create the filter weights
+			double[][][] newFilterWeights = new double[l7.Fdepth][l7.Frows][l7.Fcollumns];
 			for (int x = 0; x < l7.Fdepth; x++) {
 				for (int y = 0; y < l7.Frows; y++) {
 					for (int z = 0; z < l7.Fcollumns; z++) {
-						newFilter[x][y][z] = 1;//Here we are setting every entry in the filter to 1.
+						newFilterWeights[x][y][z] = 1;//Here we are setting every entry in the filter to 1.
 					}
 				}
 			}
 
+			Filter newFilter = new Filter(newFilterWeights);//Use the default constructor with the newly created filter weights
 			l7.filters.add(newFilter);//Actually add the filter to the list of filters in the layer
 			double newBias = 1;//Create the bias for this filter
 			l7.biases.add(newBias);//Add the bias to the list of biases in the layer.
@@ -148,15 +158,17 @@ public class FSONNetwork {
 
 		//Create and initialize the filters
 		for (int i = 0; i < l8.K; i++) {
-			double[][][] newFilter = new double[l8.Fdepth][l8.Frows][l8.Fcollumns];
+			//Create the filter weights
+			double[][][] newFilterWeights = new double[l8.Fdepth][l8.Frows][l8.Fcollumns];
 			for (int x = 0; x < l8.Fdepth; x++) {
 				for (int y = 0; y < l8.Frows; y++) {
 					for (int z = 0; z < l8.Fcollumns; z++) {
-						newFilter[x][y][z] = 0.5;//Here we are setting every entry in the filter to 0.5.
+						newFilterWeights[x][y][z] = 0.5;//Here we are setting every entry in the filter to 0.5.
 					}
 				}
 			}
 
+			Filter newFilter = new Filter(newFilterWeights);//Use the default constructor with the newly created filter weights
 			l8.filters.add(newFilter);//Actually add the filter to the list of filters in the layer
 			double newBias = 1;//Create the bias for this filter
 			l8.biases.add(newBias);//Add the bias to the list of biases in the layer.

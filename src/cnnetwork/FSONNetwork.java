@@ -59,8 +59,21 @@ public class FSONNetwork {
 		}
 
 		//Create the second layer.
-		//Because this is a maxpool layer, we don't need to worry about creating any filters or biases.
-		Layer l2 = new Layer(72, 72, 32, 3, 3, 32, 1, 2, 0, LayerType.MAXPOOL);
+		Layer l2 = new Layer(72, 72, 32, 3, 3, 32, 39200, 2, 0, LayerType.MAXPOOL);
+
+		// Create and initialize the "filters"
+		// Because this is a maxpool layer, these filters are only used to
+		// record connections for use during backpropagation, and we don't need
+		// any biases.
+		for (int i = 0; i < l2.K; i++) {
+			// Create the filter weights
+			double[][][] newFilterWeights = new double[1][l2.Frows][l2.Fcollumns];
+
+			// (java will initialize them to 0)
+
+			Filter newFilter = new Filter(newFilterWeights);// Use the default constructor with the newly created filter weights
+			l2.filters.add(newFilter);// Actually add the filter to the list of filters in the layer
+		}
 		
 		//Create and initialize the third layer.
 		Layer l3 = new Layer(35, 35, 32, 5, 5, 32, 16, 1, 0, LayerType.CONV);
@@ -84,8 +97,21 @@ public class FSONNetwork {
 		}
 
 		//Create the fourth layer.
-		//Because this is a maxpool layer, we don't need to worry about creating any filters or biases.
-		Layer l4 = new Layer(31, 31, 16, 5, 5, 16, 1, 2, 0, LayerType.MAXPOOL);
+		Layer l4 = new Layer(31, 31, 16, 5, 5, 16, 3136, 2, 0, LayerType.MAXPOOL);
+		
+		// Create and initialize the "filters"
+		// Because this is a maxpool layer, these filters are only used to
+		// record connections for use during backpropagation, and we don't need
+		// any biases.
+		for (int i = 0; i < l4.K; i++) {
+			// Create the filter weights
+			double[][][] newFilterWeights = new double[1][l4.Frows][l4.Fcollumns];
+
+			// (java will initialize them to 0)
+
+			Filter newFilter = new Filter(newFilterWeights);// Use the default constructor with the newly created filter weights
+			l4.filters.add(newFilter);// Actually add the filter to the list of filters in the layer
+		}
 		
 		//Create and initialize the fifth layer.
 		Layer l5 = new Layer(14, 14, 16, 3, 3, 16, 16, 2, 0, LayerType.CONV);
@@ -237,9 +263,9 @@ public class FSONNetwork {
 
 		//Call the appropriate functions to feed the input through the layers
 		this.layers.get(0).convolution(this.layers.get(0).cells, this.layers.get(0).filters, this.layers.get(1).cells, this.layers.get(0).step, this.layers.get(0).pad, this.layers.get(0).biases);
-		this.layers.get(1).pool(this.layers.get(1).cells, this.layers.get(2).cells, this.layers.get(1).step, this.layers.get(1).Fcollumns);
+		this.layers.get(1).pool(this.layers.get(1).cells, this.layers.get(1).filters, this.layers.get(2).cells, this.layers.get(1).step, this.layers.get(1).Fcollumns);
 		this.layers.get(2).convolution(this.layers.get(2).cells, this.layers.get(2).filters, this.layers.get(3).cells, this.layers.get(2).step, this.layers.get(2).pad, this.layers.get(2).biases);
-		this.layers.get(3).pool(this.layers.get(3).cells, this.layers.get(4).cells, this.layers.get(3).step, this.layers.get(3).Fcollumns);
+		this.layers.get(3).pool(this.layers.get(3).cells, this.layers.get(3).filters, this.layers.get(4).cells, this.layers.get(3).step, this.layers.get(3).Fcollumns);
 		this.layers.get(4).convolution(this.layers.get(4).cells, this.layers.get(4).filters, this.layers.get(5).cells, this.layers.get(4).step, this.layers.get(4).pad, this.layers.get(4).biases);
 		this.layers.get(5).local(this.layers.get(5).cells, this.layers.get(5).filters, this.layers.get(6).cells, this.layers.get(5).step, this.layers.get(5).pad, this.layers.get(5).biases);
 		this.layers.get(6).full(this.layers.get(6).cells, this.layers.get(6).filters, this.layers.get(7).cells[0][0], this.layers.get(6).step, this.layers.get(6).pad, this.layers.get(6).biases);

@@ -189,8 +189,10 @@ public class Layer {
 	 *            the size (f = width = height) of the section of input used in
 	 *            the pooling operation.
 	 */
-	public void pool(double[][][] input, double[][][] output, int step, int f) {
+	public void pool(double[][][] input, LinkedList<Filter> filters, double[][][] output, int step, int f) {
 
+		int filterNum = 0;//This is used to iterate over the list of filters (necessary for backpropagation)
+		
 		//Iterate over the input, calling "computeMax" to pool at each location.
 		//Make sure not to go off the edge of the input "((j + f) < input[0].length)".
 		//(This check is not needed for depth because "computeMax" only operates on a
@@ -203,6 +205,11 @@ public class Layer {
 				// Column
 				for (int k = 0; (k + f) <= input[0][0].length; k += step) {
 					output[l][(j / step)][(k / step)] = computeMax(input, k, j, l, f);
+					
+					//Record this connection
+					filters.get(filterNum).connections.add(new FilterConnection(filterNum, new CellCoord(l, j, k), new CellCoord(l, (j / step), (k / step)), -1));
+					
+					filterNum++;//Make sure to increment this so that you use the next filter each time.
 
 				}
 

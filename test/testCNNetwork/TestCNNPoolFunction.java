@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
+import cnnetwork.Filter;
 import cnnetwork.Layer;
 import cnnetwork.LayerType;
 
@@ -14,6 +15,7 @@ import cnnetwork.LayerType;
  */
 public class TestCNNPoolFunction {
 
+	
 	Layer testLayer;
 	
 	double[][][] testOut;
@@ -25,7 +27,7 @@ public class TestCNNPoolFunction {
 	public void setUp() throws Exception {
 		
 		//Create and initialize the layer to use for testing
-		testLayer = new Layer(4, 4, 3, 2, 2, 3, 4, 2, 0, LayerType.MAXPOOL);
+		testLayer = new Layer(4, 4, 3, 2, 2, 3, 12, 2, 0, LayerType.MAXPOOL);
 		
 		//Set the values of all the cells
 		testLayer.cells[0][0][0] = 0;
@@ -97,11 +99,26 @@ public class TestCNNPoolFunction {
 		//Create and initialize the array to use to store the output
 		testOut = new double[testLayer.cells.length][width][width];
 		
+		// Create and initialize the "filters"
+		// Because this is a maxpool layer, these filters are only used to
+		// record connections for use during backpropagation, and we don't need
+		// any biases.
+		for (int i = 0; i < testLayer.K; i++) {
+			// Create the filter weights
+			double[][][] newFilterWeights = new double[1][testLayer.Frows][testLayer.Fcollumns];
+
+			// (java will initialize them to 0)
+
+			Filter newFilter = new Filter(newFilterWeights);// Use the default constructor with the newly created filter weights
+			testLayer.filters.add(newFilter);// Actually add the filter to the list of filters in the layer
+		}
+		
+		
 	}
 
 	@Test
 	public void test() {
-		testLayer.pool(testLayer.cells, testOut, testLayer.step, testLayer.Fcollumns);
+		testLayer.pool(testLayer.cells, testLayer.filters, testOut, testLayer.step, testLayer.Fcollumns);
 		
 		//This is an array of values we expect to see in testOut
 		double[][][] temp = new double[3][2][2];

@@ -77,8 +77,21 @@ public class TestCNNFSONnetwork {
 		}
 
 		//Create the second layer.
-		//Because this is a maxpool layer, we don't need to worry about creating any filters or biases.
-		Layer l2 = new Layer(72, 72, 32, 3, 3, 32, 1, 2, 0, LayerType.MAXPOOL);
+		Layer l2 = new Layer(72, 72, 32, 3, 3, 32, 39200, 2, 0, LayerType.MAXPOOL);
+		
+		// Create and initialize the "filters"
+		// Because this is a maxpool layer, these filters are only used to
+		// record connections for use during backpropagation, and we don't need
+		// any biases.
+		for (int i = 0; i < l2.K; i++) {
+			// Create the filter weights
+			double[][][] newFilterWeights = new double[1][l2.Frows][l2.Fcollumns];
+
+			// (java will initialize them to 0)
+
+			Filter newFilter = new Filter(newFilterWeights);// Use the default constructor with the newly created filter weights
+			l2.filters.add(newFilter);// Actually add the filter to the list of filters in the layer
+		}
 		
 		//Create and initialize the third layer.
 		Layer l3 = new Layer(35, 35, 32, 5, 5, 32, 16, 1, 0, LayerType.CONV);
@@ -102,8 +115,21 @@ public class TestCNNFSONnetwork {
 		}
 
 		//Create the fourth layer.
-		//Because this is a maxpool layer, we don't need to worry about creating any filters or biases.
-		Layer l4 = new Layer(31, 31, 16, 5, 5, 16, 1, 2, 0, LayerType.MAXPOOL);
+		Layer l4 = new Layer(31, 31, 16, 5, 5, 16, 3136, 2, 0, LayerType.MAXPOOL);
+
+		// Create and initialize the "filters"
+		// Because this is a maxpool layer, these filters are only used to
+		// record connections for use during backpropagation, and we don't need
+		// any biases.
+		for (int i = 0; i < l4.K; i++) {
+			// Create the filter weights
+			double[][][] newFilterWeights = new double[1][l4.Frows][l4.Fcollumns];
+
+			// (java will initialize them to 0)
+
+			Filter newFilter = new Filter(newFilterWeights);// Use the default constructor with the newly created filter weights
+			l4.filters.add(newFilter);// Actually add the filter to the list of filters in the layer
+		}
 		
 		//Create and initialize the fifth layer.
 		Layer l5 = new Layer(14, 14, 16, 3, 3, 16, 16, 2, 0, LayerType.CONV);
@@ -216,9 +242,9 @@ public class TestCNNFSONnetwork {
 
 		//Call the appropriate functions to feed the input through the layers
 		l1.convolution(l1.cells, l1.filters, l2.cells, l1.step, l1.pad, l1.biases);
-		l2.pool(l2.cells, l3.cells, l2.step, l2.Fcollumns);
+		l2.pool(l2.cells, l2.filters, l3.cells, l2.step, l2.Fcollumns);
 		l3.convolution(l3.cells, l3.filters, l4.cells, l3.step, l3.pad, l3.biases);
-		l4.pool(l4.cells, l5.cells, l4.step, l4.Fcollumns);
+		l4.pool(l4.cells, l4.filters, l5.cells, l4.step, l4.Fcollumns);
 		l5.convolution(l5.cells, l5.filters, l6.cells, l5.step, l5.pad, l5.biases);
 		l6.local(l6.cells, l6.filters, l7.cells, l6.step, l6.pad, l6.biases);
 		l7.full(l7.cells, l7.filters, l8.cells[0][0], l7.step, l7.pad, l7.biases);

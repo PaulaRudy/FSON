@@ -14,6 +14,6 @@ public class FilterConnection {
 		this.biasIndex = biasIndex;
 		this.inStart = inStart;
 		this.out = out;
-		this.gradientValue = gradientValue;
+		this.gradientValue = gradientValue;//A value of -1 here indicates no gradient value has been computed yet
 	}
 }

@@ -159,11 +159,14 @@ public class Layer {
 			//will iterate through the full depth of the filters).
 
 			// Row
-			for (int j = 0; j < output[0].length; j += step) {
+			for (int j = 0; (j + filters.get(0).weights[0].length) <= input[0].length; j += step) {
 				// Column
-				for (int k = 0; k < output[0][0].length; k += step) {
+				for (int k = 0; (k + filters.get(0).weights[0][0].length) <= input[0][0].length; k += step) {
+					
 					output[l][(j / step)][(k / step)] = compute(filters.get(l), input, k, j, 0, biases.get(l));
 
+					//Record this connection
+					filters.get(l).connections.add(new FilterConnection(l, new CellCoord(0, j, k), new CellCoord(l, (j / step), (k / step)), -1));
 				}
 			}
 
@@ -248,6 +251,10 @@ public class Layer {
 				for (int k = 0; (k + filters.get(0).weights[0][0].length) <= input[0][0].length; k += step) {
 					output[l][(j / step)][(k / step)] = compute(filters.get(filterNum), input, k, j, l,
 							biases.get(filterNum));
+					
+					//Record this connection
+					filters.get(filterNum).connections.add(new FilterConnection(filterNum, new CellCoord(l, j, k), new CellCoord(l, (j / step), (k / step)), -1));
+					
 					filterNum++;//Make sure to increment this so that you use the next filter and bias each time.
 				}
 
@@ -287,6 +294,9 @@ public class Layer {
 		// the full depth of the filter).
 		for (int f = 0; f < filters.size(); f++) {
 			output[f] = compute(filters.get(f), input, 0, 0, 0, biases.get(f));
+			
+			//Record this connection
+			filters.get(f).connections.add(new FilterConnection(f, new CellCoord(0, 0, 0), new CellCoord(0, 0, f), -1));
 		}
 	}
 }

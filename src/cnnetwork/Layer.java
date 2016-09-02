@@ -2,6 +2,13 @@ package cnnetwork;
 
 import java.util.LinkedList;
 
+import javacalculus.core.CALC;
+import javacalculus.core.CalcParser;
+import javacalculus.evaluator.CalcSUB;
+import javacalculus.struct.CalcDouble;
+import javacalculus.struct.CalcObject;
+import javacalculus.struct.CalcSymbol;
+
 /**
  * This class contains all the code for the structure and function of a neural
  * network, including fully connected, locally connected, max pooling, and
@@ -306,4 +313,43 @@ public class Layer {
 			filters.get(f).connections.add(new FilterConnection(f, new CellCoord(0, 0, 0), new CellCoord(0, 0, f), -1));
 		}
 	}
+	
+	/**
+	 * This function is used to ensure that the value for each cell is kept
+	 * between 0 and 1
+	 * 
+	 * @param x
+	 *            The original value of the cell as a double
+	 * @return The calculated result of the activation function
+	 * @throws Exception
+	 *             Thrown when the activation function does not return a number
+	 */
+	public double activationFunction(double x) throws Exception {
+		String function = "1/(1+E^x)";// The actual activation function, in string form
+
+		// Parse the function using JavaCalculus
+		CalcParser parser = new CalcParser();
+		CalcObject parsed = parser.parse(function);
+		CalcObject resultObject = parsed.evaluate();
+
+		// Substitute the passed in value of x
+		CalcSymbol symbol = new CalcSymbol("x");
+		CalcDouble value = new CalcDouble(x);
+		resultObject = CalcSUB.numericSubstitute(resultObject, symbol, value);
+
+		// Evaluate the function using the passed in value of x
+		resultObject = CALC.SYM_EVAL(resultObject);
+
+		// Return either the numerical result or throw an exception to indicate
+		// it cannot be calculated
+		double result;
+		if (resultObject.isNumber()) {
+			result = Double.parseDouble(resultObject.toString());
+		} else {
+			throw new Exception();
+		}
+
+		return result;
+	}
+
 }

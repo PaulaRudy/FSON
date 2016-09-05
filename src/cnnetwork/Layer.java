@@ -351,5 +351,74 @@ public class Layer {
 
 		return result;
 	}
+	
+	/**
+	 * This function is used to ensure that the value for each cell is kept
+	 * between 0 and 1, in layers where each cell's value is dependent on the
+	 * values of the other cells (IE the "softmax" layer)
+	 * 
+	 * @param x
+	 *            The original value of the cell as a double
+	 * @param sumENet
+	 *            The sum e raised to each original value of all the cells of
+	 *            the layer. IE sum(e^xi). Use the function sumE() to obtain.
+	 * @return The calculated result of the activation function
+	 * @throws Exception
+	 *             Thrown when the activation function does not return a number
+	 */
+	public double softmaxActivationFunction(double x, double sumENet) throws Exception {
+		String function = "(1+E^x)/y";// The actual activation function, in string form
+
+		// Parse the function using JavaCalculus
+		CalcParser parser = new CalcParser();
+		CalcObject parsed = parser.parse(function);
+		CalcObject resultObject = parsed.evaluate();
+
+		// Substitute the passed in value of x
+		CalcSymbol symbolx = new CalcSymbol("x");
+		CalcDouble valuex = new CalcDouble(x);
+		resultObject = CalcSUB.numericSubstitute(resultObject, symbolx, valuex);
+		
+		// Substitute the passed in value of sumENet
+		CalcSymbol symboly = new CalcSymbol("y");
+		CalcDouble valuey = new CalcDouble(sumENet);
+		resultObject = CalcSUB.numericSubstitute(resultObject, symboly, valuey);
+
+		// Evaluate the function using the passed in value of x
+		resultObject = CALC.SYM_EVAL(resultObject);
+
+		// Return either the numerical result or throw an exception to indicate
+		// it cannot be calculated
+		double result;
+		if (resultObject.isNumber()) {
+			result = Double.parseDouble(resultObject.toString());
+		} else {
+			throw new Exception();
+		}
+
+		return result;
+	}
+	
+	/**
+	 * This is a helper function, used to calculate the sum of e to the power of
+	 * the value of each of the cells in a softmax layer. This value is used in
+	 * softmaxActivationFunction as a parameter.
+	 * 
+	 * @return The sum e raised to each original value of all the cells of the
+	 *         layer. IE sum(e^xi).
+	 */
+	public double sumE() {
+		
+		//Start with 0. This will hold the sum.
+		double total = 0;
+		
+		//Iterate over all the cells. Because this is a softmax layer, it will 
+		//have a depth and row length of 1, so only iterate over the columns.
+		for(int i = 0; i< this.collumns; i++){
+			total += Math.exp(this.cells[i][1][1]);
+		}
+		
+		return total;
+	}
 
 }

@@ -213,15 +213,15 @@ public class TestCNNFullFunction {
 	}
 
 	@Test
-	public void test() {
+	public void test() throws Exception {
 		testLayer.full(testLayer.cells, testLayer.filters, testOut, 1, 0, testLayer.biases);
 
 		//This is an array of values we expect to see in testOut
 		double[] temp = new double[3];
 
-		temp[0] = 7;
-		temp[1] = -4;
-		temp[2] = 20;
+		temp[0] = 0.0009110505;
+		temp[1] = 0.9820138;
+		temp[2] = 0.000000002061151;
 
 		//Compare the temp array to the values stored in the output array
 		for (int i = 0; i < temp.length; i++) {

@@ -99,18 +99,18 @@ public class TestCNNComputeFunction {
 	}
 
 	@Test
-	public void testCompute() {
+	public void testCompute() throws Exception {
 		double result0 = testLayer.compute(testLayer.filters.get(0), testLayer.cells, 0, 0, 0,
 				testLayer.biases.get(0));
-		assertEquals(result0, 5, 0);
+		assertEquals(result0, 0.006692849, 0);
 	
 		double result1 = testLayer.compute(testLayer.filters.get(0), testLayer.cells, 1, 1, 0,
 				testLayer.biases.get(0));
-		assertEquals(result1, 4, 0);
+		assertEquals(result1, 0.01798621, 0);
 
 		double result2 = testLayer.compute(testLayer.filters.get(0), testLayer.cells, 0, 1, 0,
 				testLayer.biases.get(0));
-		assertEquals(result2, 4, 0);
+		assertEquals(result2, 0.01798621, 0);
 	}
 
 }

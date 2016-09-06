@@ -252,7 +252,7 @@ public class TestCNNFSONnetwork {
 	}
 
 	@Test
-	public void test() {
+	public void test() throws Exception {
 		FSONNetwork test = new FSONNetwork();
 		
 		test.calculate(image);

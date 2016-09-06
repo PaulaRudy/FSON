@@ -72,8 +72,11 @@ public class Layer {
 	 * @param bias
 	 *            the bias to be used in this computation.
 	 * @return the newly computed value to be stored into the next layer.
+	 * @throws Exception
+	 *             Thrown when the activation function does not return a number
+	 *             (see activationFunction()).
 	 */
-	public double compute(Filter filter, double[][][] input, int column, int row, int depth, double bias) {
+	public double compute(Filter filter, double[][][] input, int column, int row, int depth, double bias) throws Exception {
 		double result = 0.0;
 
 		//For every cell in the input array, using depth, row, and column as the starting point,
@@ -87,6 +90,9 @@ public class Layer {
 
 		}
 		result += bias;//Add the bias
+		
+		//Use the activation function to determine actual value (limited between 0 and 1).
+		result = activationFunction(result);
 		return result;
 	}
 
@@ -153,9 +159,12 @@ public class Layer {
 	 * @param biases
 	 *            the list of biases to be applied to the input layer, in the
 	 *            same order as the list of filters.
+	 * @throws Exception 
+	 *             Thrown when the activation function does not return a number
+	 *             (see activationFunction()).
 	 */
 	public void convolution(double[][][] input, LinkedList<Filter> filters, double[][][] output, int step,
-			int padding, LinkedList<Double> biases) {
+			int padding, LinkedList<Double> biases) throws Exception {
 
 		// For every filter and bias in the list
 		for (int l = 0; l < filters.size(); l++) {
@@ -248,9 +257,12 @@ public class Layer {
 	 * @param biases
 	 *            the list of biases to be applied to the input layer, in the
 	 *            same order as the list of filters.
+	 * @throws Exception 
+	 *             Thrown when the activation function does not return a number
+	 *             (see activationFunction()).
 	 */
 	public void local(double[][][] input, LinkedList<Filter> filters, double[][][] output, int step, int padding,
-			LinkedList<Double> biases) {
+			LinkedList<Double> biases) throws Exception {
 
 		int filterNum = 0;//This is used to iterate over the list of filters ("filters") and biases ("biases").
 		
@@ -299,9 +311,12 @@ public class Layer {
 	 * @param biases
 	 *            the list of biases to be applied to the input layer, in the
 	 *            same order as the list of filters.
+	 * @throws Exception 
+	 *             Thrown when the activation function does not return a number
+	 *             (see activationFunction()).
 	 */
 	public void full(double[][][] input, LinkedList<Filter> filters, double[] output, int step, int padding,
-			LinkedList<Double> biases) {
+			LinkedList<Double> biases) throws Exception {
 		//Apply each filter to the input.
 		//Because this is a fully connected layer, each filter is applied to the entire input array,
 		// so we do not need to iterate over the input (the "compute" function will iterate through 

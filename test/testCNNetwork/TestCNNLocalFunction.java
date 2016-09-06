@@ -269,29 +269,29 @@ public class TestCNNLocalFunction {
 	}
 
 	@Test
-	public void test() {
+	public void test() throws Exception {
 		testLayer.local(testLayer.cells, testLayer.filters, testOut, 1, 0, testLayer.biases);
 
 		//This is an array of values we expect to see in testOut
 		double[][][] temp = new double[3][2][2];
 
-		temp[0][0][0] = 5;
-		temp[0][0][1] = 0;
+		temp[0][0][0] = 0.006692849;
+		temp[0][0][1] = 0.5;
 
-		temp[0][1][0] = -1;
-		temp[0][1][1] = 2;
+		temp[0][1][0] = 0.7310586;
+		temp[0][1][1] = 0.1192029;
 
-		temp[1][0][0] = 0;
-		temp[1][0][1] = 0;
+		temp[1][0][0] = 0.5;
+		temp[1][0][1] = 0.5;
 
-		temp[1][1][0] = -3;
-		temp[1][1][1] = 3;
+		temp[1][1][0] = 0.9525741;
+		temp[1][1][1] = 0.04742587;
 
-		temp[2][0][0] = 0;
-		temp[2][0][1] = 4;
+		temp[2][0][0] = 0.5;
+		temp[2][0][1] = 0.01798621;
 
-		temp[2][1][0] = 3;
-		temp[2][1][1] = 1;
+		temp[2][1][0] = 0.04742587;
+		temp[2][1][1] = 0.2689414;
 
 		//Compare the temp array to the values stored in the output array
 		for (int i = 0; i < temp.length; i++) {

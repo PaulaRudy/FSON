@@ -221,9 +221,13 @@ public class FSONNetwork {
 	/**
 	 * This function feeds a buffered image through the network,
 	 * 
-	 * @param image The image to use as input
+	 * @param image
+	 *            The image to use as input
+	 * @throws Exception
+	 *             Thrown when the activation function does not return a number
+	 *             (see Layer::activationFunction()).
 	 */
-	public void calculate(BufferedImage image) {
+	public void calculate(BufferedImage image) throws Exception {
 
 		//This is necessary to use any of the OpenCV functions
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);

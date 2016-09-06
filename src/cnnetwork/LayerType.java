@@ -5,12 +5,11 @@ package cnnetwork;
  * Convolutional (CONV),
  * Maxpooling (MAXPOOL),
  * Locally connected (LOCAL), 
- * Fully connected (FULLY),
  * or
- * Softmax (SOFTMAX).
+ * Fully connected (FULLY).
  */
 public enum LayerType {
-	CONV(1), MAXPOOL(2), LOCAL(3), FULLY(4), SOFTMAX(5);
+	CONV(1), MAXPOOL(2), LOCAL(3), FULLY(4);
 
 	private int value;
 

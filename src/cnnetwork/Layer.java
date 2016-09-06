@@ -368,15 +368,14 @@ public class Layer {
 	}
 	
 	/**
-	 * This function is used to ensure that the value for each cell is kept
-	 * between 0 and 1, in layers where each cell's value is dependent on the
-	 * values of the other cells (IE the "softmax" layer)
+	 * This function is a helper function to softmax() to calculate the value of
+	 * a single cell in a k way softmax.
 	 * 
 	 * @param x
 	 *            The original value of the cell as a double
 	 * @param sumENet
 	 *            The sum e raised to each original value of all the cells of
-	 *            the layer. IE sum(e^xi). Use the function sumE() to obtain.
+	 *            the input. IE sum(e^xi). Use the function sumE() to obtain.
 	 * @return The calculated result of the activation function
 	 * @throws Exception
 	 *             Thrown when the activation function does not return a number
@@ -416,24 +415,54 @@ public class Layer {
 	
 	/**
 	 * This is a helper function, used to calculate the sum of e to the power of
-	 * the value of each of the cells in a softmax layer. This value is used in
+	 * the value of each of the values in the input. This value is used in
 	 * softmaxActivationFunction as a parameter.
 	 * 
-	 * @return The sum e raised to each original value of all the cells of the
-	 *         layer. IE sum(e^xi).
+	 * @param input
+	 *            The input values upon which to calculate the sum.
+	 * 
+	 * @return The sum e raised to each original value of all the values of the
+	 *         input. IE sum(e^xi).
 	 */
-	public double sumE() {
+	public double sumE(double[] input) {
 		
 		//Start with 0. This will hold the sum.
 		double total = 0;
 		
-		//Iterate over all the cells. Because this is a softmax layer, it will 
-		//have a depth and row length of 1, so only iterate over the columns.
-		for(int i = 0; i< this.collumns; i++){
-			total += Math.exp(this.cells[i][1][1]);
+		// Iterate over all the cells. 
+		for (int i = 0; i < input.length; i++) {
+			total += Math.exp(input[i]);
 		}
 		
 		return total;
+	}
+	
+	/**
+	 * This function is used to calculate a k way softmax- an array of values
+	 * where all the values sum to 1. This is used in the final step in a k-way
+	 * classification; the output values represent the probability that the
+	 * input represents that particular class.
+	 * 
+	 * @param input
+	 *            The input layer's values upon which to calculate the softmax.
+	 * @return A one dimensional array of doubles, the same length as the depth
+	 *         of the input array, that sum to 1.
+	 * @throws Exception
+	 *             Thrown when the activation function does not return a number
+	 */
+	public double[] softmax(double[] input) throws Exception {
+
+		double sum = sumE(input);
+		double[] output = new double[input.length];
+		
+		// Iterate over all the cells. Because this is a softmax "layer", it will
+		// be one dimensional
+		for (int i = 0; i < input.length; i++) {
+			output[i] = softmaxActivationFunction(input[i], sum);
+		}
+
+		return output;
+		
 	}
 
 }

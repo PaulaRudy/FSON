@@ -380,7 +380,7 @@ public class Layer {
 	 * @throws Exception
 	 *             Thrown when the activation function does not return a number
 	 */
-	public double softmaxActivationFunction(double x, double sumENet) throws Exception {
+	public static double softmaxActivationFunction(double x, double sumENet) throws Exception {
 		String function = "(1+E^x)/y";// The actual activation function, in string form
 
 		// Parse the function using JavaCalculus
@@ -424,7 +424,7 @@ public class Layer {
 	 * @return The sum e raised to each original value of all the values of the
 	 *         input. IE sum(e^xi).
 	 */
-	public double sumE(double[] input) {
+	public static double sumE(double[] input) {
 		
 		//Start with 0. This will hold the sum.
 		double total = 0;
@@ -450,7 +450,7 @@ public class Layer {
 	 * @throws Exception
 	 *             Thrown when the activation function does not return a number
 	 */
-	public double[] softmax(double[] input) throws Exception {
+	public static double[] softmax(double[] input) throws Exception {
 
 		double sum = sumE(input);
 		double[] output = new double[input.length];

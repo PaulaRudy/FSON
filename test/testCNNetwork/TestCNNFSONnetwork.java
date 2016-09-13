@@ -255,6 +255,7 @@ public class TestCNNFSONnetwork {
 		l6.local(l6.cells, l6.filters, l7.cells, l6.step, l6.pad, l6.biases);
 		l7.full(l7.cells, l7.filters, l8.cells[0][0], l7.step, l7.pad, l7.biases);
 		l8.full(l8.cells, l8.filters, out, l8.step, l8.pad, l8.biases);
+		Layer.softmax(out);
 	}
 
 	@Test

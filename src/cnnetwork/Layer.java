@@ -12,7 +12,7 @@ import javacalculus.struct.CalcSymbol;
 /**
  * This class contains all the code for the structure and function of a neural
  * network, including fully connected, locally connected, max pooling, and
- * convolutional layers.
+ * convolutional layers, as well as activation functions and their helpers.
  * 
  * @author Paula Rudy
  *

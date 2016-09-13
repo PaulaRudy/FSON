@@ -31,41 +31,41 @@ public class TestCNNComputeFunction {
 
 		//Set the values of all the cells
 
-		testLayer.cells[0][0][0] = 2;
-		testLayer.cells[0][0][1] = 0;
-		testLayer.cells[0][0][2] = 2;
+		testLayer.cells[0][0][0].value = 2;
+		testLayer.cells[0][0][1].value = 0;
+		testLayer.cells[0][0][2].value = 2;
 
-		testLayer.cells[0][1][0] = 2;
-		testLayer.cells[0][1][1] = 2;
-		testLayer.cells[0][1][2] = 2;
+		testLayer.cells[0][1][0].value = 2;
+		testLayer.cells[0][1][1].value = 2;
+		testLayer.cells[0][1][2].value = 2;
 
-		testLayer.cells[0][2][0] = 0;
-		testLayer.cells[0][2][1] = 1;
-		testLayer.cells[0][2][2] = 0;
+		testLayer.cells[0][2][0].value = 0;
+		testLayer.cells[0][2][1].value = 1;
+		testLayer.cells[0][2][2].value = 0;
 
-		testLayer.cells[1][0][0] = 1;
-		testLayer.cells[1][0][1] = 0;
-		testLayer.cells[1][0][2] = 2;
+		testLayer.cells[1][0][0].value = 1;
+		testLayer.cells[1][0][1].value = 0;
+		testLayer.cells[1][0][2].value = 2;
 
-		testLayer.cells[1][1][0] = 0;
-		testLayer.cells[1][1][1] = 2;
-		testLayer.cells[1][1][2] = 0;
+		testLayer.cells[1][1][0].value = 0;
+		testLayer.cells[1][1][1].value = 2;
+		testLayer.cells[1][1][2].value = 0;
 
-		testLayer.cells[1][2][0] = 2;
-		testLayer.cells[1][2][1] = 1;
-		testLayer.cells[1][2][2] = 2;
+		testLayer.cells[1][2][0].value = 2;
+		testLayer.cells[1][2][1].value = 1;
+		testLayer.cells[1][2][2].value = 2;
 
-		testLayer.cells[2][0][0] = 1;
-		testLayer.cells[2][0][1] = 2;
-		testLayer.cells[2][0][2] = 0;
+		testLayer.cells[2][0][0].value = 1;
+		testLayer.cells[2][0][1].value = 2;
+		testLayer.cells[2][0][2].value = 0;
 
-		testLayer.cells[2][1][0] = 2;
-		testLayer.cells[2][1][1] = 2;
-		testLayer.cells[2][1][2] = 1;
+		testLayer.cells[2][1][0].value = 2;
+		testLayer.cells[2][1][1].value = 2;
+		testLayer.cells[2][1][2].value = 1;
 
-		testLayer.cells[2][2][0] = 0;
-		testLayer.cells[2][2][1] = 1;
-		testLayer.cells[2][2][2] = 1;
+		testLayer.cells[2][2][0].value = 0;
+		testLayer.cells[2][2][1].value = 1;
+		testLayer.cells[2][2][2].value = 1;
 
 		//Create and initialize the filter weights
 		testFilterWeights = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];

@@ -1,6 +1,6 @@
 package testCNNetwork;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -16,6 +16,7 @@ import org.opencv.core.Mat;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
+import cnnetwork.Cell;
 import cnnetwork.FSONNetwork;
 import cnnetwork.Filter;
 import cnnetwork.Layer;
@@ -30,7 +31,7 @@ import image.Align;
 public class TestCNNFSONnetwork {
 	
 	Layer l1, l2, l3, l4, l5, l6, l7, l8;
-	double[] out;
+	Cell[] out;
 	BufferedImage image;
 
 	@Before
@@ -219,7 +220,12 @@ public class TestCNNFSONnetwork {
 		}
 
 		//This is the last "layer": this will hold the output of the network
-		out = new double[2016];
+		out = new Cell[2016];
+		
+		// Initialize the cells because java won't do it for you
+		for (int i = 0; i < 2016; i++) {
+			this.out[i] = new Cell();
+		}
 		
 		//For each channel...
 		for (int i = 0; i < channels.size(); i++) {
@@ -233,7 +239,7 @@ public class TestCNNFSONnetwork {
 			//...and then into the cells of the first layer of the network.
 			for (int j = 0; j < 76; j++) {
 				for (int k = 0; k < 76; k++) {
-					l1.cells[i][j][k] = temp[(j * 76) + k];
+					l1.cells[i][j][k].value = temp[(j * 76) + k];
 				}
 
 			}
@@ -259,7 +265,7 @@ public class TestCNNFSONnetwork {
 		
 		//Test that using the functions in FSONNetwork results in the same values as doing it manually
 		for (int i = 0; i < out.length; i++) {
-			assertEquals(out[i], test.out[i], 0);
+			assertEquals(out[i].value, test.out[i].value, 0);
 		}
 	}
 

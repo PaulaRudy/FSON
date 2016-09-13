@@ -1,10 +1,11 @@
 package testCNNetwork;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Before;
 import org.junit.Test;
 
+import cnnetwork.Cell;
 import cnnetwork.Filter;
 import cnnetwork.Layer;
 import cnnetwork.LayerType;
@@ -21,7 +22,7 @@ public class TestCNNFullFunction {
 
 	double testBias0, testBias1, testBias2;
 
-	double[] testOut;
+	Cell[] testOut;
 
 	/**
 	 * @throws java.lang.Exception
@@ -33,41 +34,41 @@ public class TestCNNFullFunction {
 		testLayer = new Layer(3, 3, 3, 3, 3, 3, 3, 1, 0, LayerType.CONV);
 
 		//Set the values of all the cells
-		testLayer.cells[0][0][0] = 2;
-		testLayer.cells[0][0][1] = 0;
-		testLayer.cells[0][0][2] = 2;
+		testLayer.cells[0][0][0].value = 2;
+		testLayer.cells[0][0][1].value = 0;
+		testLayer.cells[0][0][2].value = 2;
 
-		testLayer.cells[0][1][0] = 2;
-		testLayer.cells[0][1][1] = 2;
-		testLayer.cells[0][1][2] = 2;
+		testLayer.cells[0][1][0].value = 2;
+		testLayer.cells[0][1][1].value = 2;
+		testLayer.cells[0][1][2].value = 2;
 
-		testLayer.cells[0][2][0] = 0;
-		testLayer.cells[0][2][1] = 1;
-		testLayer.cells[0][2][2] = 0;
+		testLayer.cells[0][2][0].value = 0;
+		testLayer.cells[0][2][1].value = 1;
+		testLayer.cells[0][2][2].value = 0;
 
-		testLayer.cells[1][0][0] = 1;
-		testLayer.cells[1][0][1] = 0;
-		testLayer.cells[1][0][2] = 2;
+		testLayer.cells[1][0][0].value = 1;
+		testLayer.cells[1][0][1].value = 0;
+		testLayer.cells[1][0][2].value = 2;
 
-		testLayer.cells[1][1][0] = 0;
-		testLayer.cells[1][1][1] = 2;
-		testLayer.cells[1][1][2] = 0;
+		testLayer.cells[1][1][0].value = 0;
+		testLayer.cells[1][1][1].value = 2;
+		testLayer.cells[1][1][2].value = 0;
 
-		testLayer.cells[1][2][0] = 2;
-		testLayer.cells[1][2][1] = 1;
-		testLayer.cells[1][2][2] = 2;
+		testLayer.cells[1][2][0].value = 2;
+		testLayer.cells[1][2][1].value = 1;
+		testLayer.cells[1][2][2].value = 2;
 
-		testLayer.cells[2][0][0] = 1;
-		testLayer.cells[2][0][1] = 2;
-		testLayer.cells[2][0][2] = 0;
+		testLayer.cells[2][0][0].value = 1;
+		testLayer.cells[2][0][1].value = 2;
+		testLayer.cells[2][0][2].value = 0;
 
-		testLayer.cells[2][1][0] = 2;
-		testLayer.cells[2][1][1] = 2;
-		testLayer.cells[2][1][2] = 1;
+		testLayer.cells[2][1][0].value = 2;
+		testLayer.cells[2][1][1].value = 2;
+		testLayer.cells[2][1][2].value = 1;
 
-		testLayer.cells[2][2][0] = 0;
-		testLayer.cells[2][2][1] = 1;
-		testLayer.cells[2][2][2] = 1;
+		testLayer.cells[2][2][0].value = 0;
+		testLayer.cells[2][2][1].value = 1;
+		testLayer.cells[2][2][2].value = 1;
 		
 		//Create and initialize the first filter
 		double[][][] testFilter0Weights = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
@@ -208,7 +209,12 @@ public class TestCNNFullFunction {
 		testLayer.biases.add(testBias2);//Add the bias to the list of biases in the layer
 
 		//Create and initialize the array to use to store the output
-		testOut = new double[testLayer.filters.size()];
+		testOut = new Cell[testLayer.filters.size()];
+		
+		//Initialize the cells because java won't do it for you
+		for (int i = 0; i < testOut.length; i++) {
+			testOut[i] = new Cell();
+		}
 
 	}
 
@@ -225,7 +231,7 @@ public class TestCNNFullFunction {
 
 		//Compare the temp array to the values stored in the output array
 		for (int i = 0; i < temp.length; i++) {
-			assertEquals(temp[i], testOut[i], 0);
+			assertEquals(temp[i], testOut[i].value, 0);
 
 		}
 	}

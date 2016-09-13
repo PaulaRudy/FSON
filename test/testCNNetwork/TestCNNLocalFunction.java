@@ -1,10 +1,11 @@
 package testCNNetwork;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Before;
 import org.junit.Test;
 
+import cnnetwork.Cell;
 import cnnetwork.Filter;
 import cnnetwork.Layer;
 import cnnetwork.LayerType;
@@ -23,7 +24,7 @@ public class TestCNNLocalFunction {
 	double testBias0, testBias1, testBias2, testBias3, testBias4, testBias5, testBias6, testBias7, testBias8, testBias9,
 			testBias10, testBias11;
 
-	double[][][] testOut;
+	Cell[][][] testOut;
 
 	/**
 	 * @throws java.lang.Exception
@@ -35,41 +36,41 @@ public class TestCNNLocalFunction {
 		testLayer = new Layer(3, 3, 3, 2, 2, 1, 12, 1, 0, LayerType.LOCAL);
 
 		//Set the values of all the cells
-		testLayer.cells[0][0][0] = 2;
-		testLayer.cells[0][0][1] = 0;
-		testLayer.cells[0][0][2] = 2;
+		testLayer.cells[0][0][0].value = 2;
+		testLayer.cells[0][0][1].value = 0;
+		testLayer.cells[0][0][2].value = 2;
 
-		testLayer.cells[0][1][0] = 2;
-		testLayer.cells[0][1][1] = 2;
-		testLayer.cells[0][1][2] = 2;
+		testLayer.cells[0][1][0].value = 2;
+		testLayer.cells[0][1][1].value = 2;
+		testLayer.cells[0][1][2].value = 2;
 
-		testLayer.cells[0][2][0] = 0;
-		testLayer.cells[0][2][1] = 1;
-		testLayer.cells[0][2][2] = 0;
+		testLayer.cells[0][2][0].value = 0;
+		testLayer.cells[0][2][1].value = 1;
+		testLayer.cells[0][2][2].value = 0;
 
-		testLayer.cells[1][0][0] = 1;
-		testLayer.cells[1][0][1] = 0;
-		testLayer.cells[1][0][2] = 2;
+		testLayer.cells[1][0][0].value = 1;
+		testLayer.cells[1][0][1].value = 0;
+		testLayer.cells[1][0][2].value = 2;
 
-		testLayer.cells[1][1][0] = 0;
-		testLayer.cells[1][1][1] = 2;
-		testLayer.cells[1][1][2] = 0;
+		testLayer.cells[1][1][0].value = 0;
+		testLayer.cells[1][1][1].value = 2;
+		testLayer.cells[1][1][2].value = 0;
 
-		testLayer.cells[1][2][0] = 2;
-		testLayer.cells[1][2][1] = 1;
-		testLayer.cells[1][2][2] = 2;
+		testLayer.cells[1][2][0].value = 2;
+		testLayer.cells[1][2][1].value = 1;
+		testLayer.cells[1][2][2].value = 2;
 
-		testLayer.cells[2][0][0] = 1;
-		testLayer.cells[2][0][1] = 2;
-		testLayer.cells[2][0][2] = 0;
+		testLayer.cells[2][0][0].value = 1;
+		testLayer.cells[2][0][1].value = 2;
+		testLayer.cells[2][0][2].value = 0;
 
-		testLayer.cells[2][1][0] = 2;
-		testLayer.cells[2][1][1] = 2;
-		testLayer.cells[2][1][2] = 1;
+		testLayer.cells[2][1][0].value = 2;
+		testLayer.cells[2][1][1].value = 2;
+		testLayer.cells[2][1][2].value = 1;
 
-		testLayer.cells[2][2][0] = 0;
-		testLayer.cells[2][2][1] = 1;
-		testLayer.cells[2][2][2] = 1;
+		testLayer.cells[2][2][0].value = 0;
+		testLayer.cells[2][2][1].value = 1;
+		testLayer.cells[2][2][2].value = 1;
 
 		//Create and initialize the first filter's weights
 		double[][][] testFilter0Weights = new double[testLayer.Fdepth][testLayer.Frows][testLayer.Fcollumns];
@@ -264,7 +265,19 @@ public class TestCNNLocalFunction {
 		int depth = testLayer.depth;
 
 		//Create and initialize the array needed to hold the output
-		testOut = new double[depth][width][width];
+		testOut = new Cell[depth][width][width];
+		
+		// Initialize the cells because java won't do it for you
+		// Depth
+		for (int l = 0; l < testOut.length; l++) {
+			// Row
+			for (int m = 0; m < testOut[0].length; m++) {
+				// Column
+				for (int n = 0; n < testOut[0][0].length; n++) {
+					testOut[l][m][n] = new Cell();
+				}
+			}
+		}
 		
 	}
 
@@ -297,7 +310,7 @@ public class TestCNNLocalFunction {
 		for (int i = 0; i < temp.length; i++) {
 			for (int j = 0; j < temp[0].length; j++) {
 				for (int k = 0; k < temp[0][0].length; k++) {
-					assertEquals(temp[i][j][k], testOut[i][j][k], 0);
+					assertEquals(temp[i][j][k], testOut[i][j][k].value, 0);
 				}
 			}
 		}

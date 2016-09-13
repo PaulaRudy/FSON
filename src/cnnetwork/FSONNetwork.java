@@ -22,7 +22,7 @@ import image.Align;
 public class FSONNetwork {
 
 	public LinkedList<Layer> layers; //The layers that make up this sample network
-	public double[] out; //This is the last layer of this network, the "output".
+	public Cell[] out; //This is the last layer of this network, the "output".
 
 	/**
 	 * This function creates and sets up the network. 
@@ -201,7 +201,12 @@ public class FSONNetwork {
 		}
 
 		//This is the last "layer": this will hold the output of the network
-		this.out = new double[2016];
+		this.out = new Cell[2016];
+		
+		//Initialize the cells because java won't do it for you
+		for (int i = 0; i < 2016; i++) {
+			this.out[i] = new Cell();
+		}
 
 		//Initialize the list of layers
 		this.layers = new LinkedList<Layer>();
@@ -258,7 +263,7 @@ public class FSONNetwork {
 			//...and then into the cells of the first layer of the network.
 			for (int j = 0; j < 76; j++) {
 				for (int k = 0; k < 76; k++) {
-					this.layers.get(0).cells[i][j][k] = temp[(j * 76) + k];
+					this.layers.get(0).cells[i][j][k].value = temp[(j * 76) + k];
 				}
 
 			}

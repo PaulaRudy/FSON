@@ -420,35 +420,7 @@ public class Layer {
 	 *             Thrown when the activation function does not return a number
 	 */
 	public static double softmaxActivationFunction(double x, double sumENet) throws Exception {
-		String function = "(1+E^x)/y";// The actual activation function, in string form
-
-		// Parse the function using JavaCalculus
-		CalcParser parser = new CalcParser();
-		CalcObject parsed = parser.parse(function);
-		CalcObject resultObject = parsed.evaluate();
-
-		// Substitute the passed in value of x
-		CalcSymbol symbolx = new CalcSymbol("x");
-		CalcDouble valuex = new CalcDouble(x);
-		resultObject = CalcSUB.numericSubstitute(resultObject, symbolx, valuex);
-		
-		// Substitute the passed in value of sumENet
-		CalcSymbol symboly = new CalcSymbol("y");
-		CalcDouble valuey = new CalcDouble(sumENet);
-		resultObject = CalcSUB.numericSubstitute(resultObject, symboly, valuey);
-
-		// Evaluate the function using the passed in value of x
-		resultObject = CALC.SYM_EVAL(resultObject);
-
-		// Return either the numerical result or throw an exception to indicate
-		// it cannot be calculated
-		double result;
-		if (resultObject.isNumber()) {
-			result = Double.parseDouble(resultObject.toString());
-		} else {
-			throw new Exception();
-		}
-
+		double result = Math.exp(x)/sumENet;
 		return result;
 	}
 	
@@ -497,9 +469,7 @@ public class Layer {
 		// be one dimensional
 		for (int i = 0; i < input.length; i++) {
 			input[i].value = softmaxActivationFunction(input[i].value, sum);
-			// Because this function is only used for processing BEFORE
-			// backpropagation, we don't need to worry about any stored
-			// derivatives being preserved.
+			//Because this function is only used for processing BEFORE backpropagation, we don't need to worry about any stored derivatives being preserved.
 			input[i].derivative = -1;
 		}
 

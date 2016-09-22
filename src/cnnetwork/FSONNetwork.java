@@ -155,7 +155,266 @@ public class FSONNetwork {
 		this.layers.get(7).full(this.layers.get(7).cells, this.layers.get(7).filters, this.out, this.layers.get(7).step, this.layers.get(7).pad, this.layers.get(7).biases);
 		Layer.softmax(this.out);
 	}
-	
-	
+
+	/**
+	 * This function computes the partial derivative of the total error with
+	 * respect to a given weight within a network. This is a recursive function
+	 * that operates with the help of the other function with this name and the
+	 * call signature:
+	 * 
+	 * computePartialDerivative(LinkedList<Layer> layers, Cell[] out, int
+	 * layerIndex, CellCoord outcell, double[] expected)
+	 * 
+	 * and
+	 * 
+	 * computeSoftmaxError()
+	 * 
+	 * (both defined in this class file- IE FSONNetwork.java).
+	 * 
+	 * @param layers
+	 *            The layers that make up this network.
+	 * @param out
+	 *            The array of cells that store the output of this network.
+	 * @param layerIndex
+	 *            The index within "layers" of the layer in which the filter
+	 *            which contains the weight (that we are exploring currently)
+	 *            resides.
+	 * @param filterIndex
+	 *            The index within the list "filters" of the filter that
+	 *            contains the weight (that we are exploring currently) resides.
+	 * @param depth
+	 *            The depth coordinate (addressed in the order
+	 *            [depth][row][column]) of the weight (that we are exploring)
+	 *            within the filter.
+	 * @param row
+	 *            The row coordinate (addressed in the order
+	 *            [depth][row][column]) of the weight (that we are exploring)
+	 *            within the filter.
+	 * @param column
+	 *            The column coordinate (addressed in the order
+	 *            [depth][row][column]) of the weight (that we are exploring)
+	 *            within the filter.
+	 * @param expected
+	 *            The array of cells that represent the expected values of "out".
+	 * @return The calculated partial derivative of the total error with respect
+	 *         to a given weight.
+	 * @throws Exception
+	 *             This exception is thrown when a problem occurs while
+	 *             calculating the activation function for a cell, via the
+	 *             compute function used on the line marked
+	 *             "//Find the net value of the output cell". See
+	 *             Layer::activationFunction() for more details.
+	 */
+	public static double computePartialDerivative(LinkedList<Layer> layers, Cell[] out, int layerIndex, int filterIndex, int depth, int row, int column, double[] expected) throws Exception{
+		// If there is already a value stored for this partial derivative...
+		if (layers.get(layerIndex).filters.get(filterIndex).gradientValues[depth][row][column] != -1) {
+			// ...then just use that
+			return layers.get(layerIndex).filters.get(filterIndex).gradientValues[depth][row][column];
+		} else {
+
+			// This will hold the sum of all the calculated partial derivatives
+			// of all the connections that use this filter
+			// (with respect to this weight)
+			// IE: Sum( dNet(i) /dw) 
+			// where i = the net value of each connection's outcell
+			double sum = 0;
+
+			// For each connection for this filter (and thus uses this weight in
+			// it's calculations)...
+			for (int i = 0; i < layers.get(layerIndex).filters.get(filterIndex).connections.size(); i++) {
+				// Calculate dnet/dw:
+
+				// First, grab the FilterConnection associated with this filter
+				// that we are dealing with right now.
+				FilterConnection thisConnection = layers.get(layerIndex).filters.get(filterIndex).connections.get(i);
+
+				// Find the value of the cell associated with this weight:
+				// This is the CellCoordinate of the first cell in this layer
+				// used in this calculation
+				CellCoord startCell = thisConnection.inStart;
+
+				// This is to compensate for odd shaped filters and/or layers;
+				// if the filter and/or layer lacks a dimension, they will be
+				// given as -1,
+				// so we will count those as 0 to avoid altering where we are
+				// going to look for the cell.
+				// TODO: Take this out? 
+				int rowTrue;
+				if (row != -1) {
+					rowTrue = row;
+				} else {
+					rowTrue = 0;
+				}
+
+				int columnTrue;
+				if (column != -1) {
+					columnTrue = column;
+				} else {
+					columnTrue = 0;
+				}
+
+				// Find the net of the cell associated with this weight
+				// (the cell's value multiplied by this weight when calculating
+				// the net value for this connection).
+				// Since this is the only thing multiplied by the weight when
+				// calculating, that means that this value is *also* the
+				// derivative of
+				// the net of this output cell with respect to this weight(IE
+				// dnet/dw).
+				// TODO: Store this instead of calculate it?
+				Double dnetdw = layers.get(layerIndex).cells[startCell.depth + depth][startCell.row
+						+ rowTrue][startCell.column + columnTrue].value;
+
+				if (((layerIndex + 1) < layers.size()) && (layers.get(layerIndex
+						+ 1).cells[thisConnection.out.depth][thisConnection.out.row][thisConnection.out.column].derivative != -1)) {
+					// If this is NOT the last layer, but there is a derivative
+					// value already stored in the "out" cell for this
+					// connection, use that.
+					sum += (dnetdw * layers.get(layerIndex
+							+ 1).cells[thisConnection.out.depth][thisConnection.out.row][thisConnection.out.column].derivative);
+				} else {
+
+					// Find the net value of the output cell:
+					double cellOut = Layer.compute(layers.get(layerIndex).filters.get(filterIndex),
+							layers.get(layerIndex).cells, startCell.column, startCell.row, startCell.depth,
+							layers.get(layerIndex).biases.get(filterIndex));
+
+					// This is the calculated derivative of the out value with
+					// respect to net for this cell
+					// IE dout/dnet
+					double doutdnet = cellOut * (1 - cellOut);
+
+					// If this is the last layer (IE the layer before "out"):
+					if ((layerIndex + 1) == layers.size()) {
+						sum += (dnetdw * doutdnet * computeSoftmaxError(out, thisConnection.out.depth, expected));
+					} else {
+						// Continue to recursively calculate the derivative
+						sum += (dnetdw * doutdnet * computePartialDerivative(layers, out, (layerIndex + 1),
+								thisConnection.out, expected));
+					}
+
+				}
+
+			}
+
+			return sum;
+		}
+
+	}
+
+	/**
+	 * This is a helper function to the function with the call signature:
+	 * 
+	 * computePartialDerivative(LinkedList<Layer> layers, Cell[] out, int
+	 * layerIndex, int filterIndex, int depth, int row, int column, double[]
+	 * expected)
+	 * 
+	 * (defined in this class file- IE FSONNetwork.java).
+	 * 
+	 * This function handles expanding the necessary derivatives for each
+	 * calculation involving a cell that is not in the last layer of the network
+	 * (IE the layer before "out[]". It calculates the partial derivative of the
+	 * total error with respect to the net activation of a cell (that is not in
+	 * the last layer). IE, it calculates de/dnet for a given cell, denoted by
+	 * the CellCoord "outcell" within the layer given by the index "layerIndex".
+	 * 
+	 * @param layers
+	 *            The layers that make up this network.
+	 * @param out
+	 *            c
+	 * @param layerIndex
+	 *            The index within "layers" of the layer in which the cell of
+	 *            interest resides.
+	 * @param outcell
+	 *            The coordinates of the cell of interest within the layer
+	 *            denoted by "layerIndex".
+	 * @param expected
+	 *            The array of cells that represent the expected values of
+	 *            "out".
+	 * @return The partial derivative of the total error with respect to the net
+	 *         activation of a cell.
+	 * @throws Exception
+	 *             This exception is thrown when a problem occurs while
+	 *             calculating the activation function for a cell, via the
+	 *             parent function of this name. See:
+	 *             
+	 *             FSONNetwork::computePartialDerivative(LinkedList
+	 *             <Layer> layers, Cell[] out, int layerIndex, int filterIndex,
+	 *             int depth, int row, int column, double[] expected) 
+	 *             
+	 *             ...for more details.
+	 */
+	private static Double computePartialDerivative(LinkedList<Layer> layers, Cell[] out, int layerIndex,
+			CellCoord outcell, double[] expected) throws Exception {
+
+		// This will hold the sum of all relevant partial derivatives;
+		// IE sum(dtotalerror/dnet_i)
+		// where i is all the weights that are applied to this cell,
+		// and total error is the total error of the whole network 
+		// with respect to the given expected values in double[]
+		// expected.
+		double dEdnet = 0;
+
+		// For all FilterConnections that use this cell for input...
+		for (int i = 0; i < layers.get(layerIndex).K; i++) {
+			LinkedList<FilterConnection> relevantConnections = layers.get(layerIndex).filters.get(i).connections;
+			for (int j = 0; j < relevantConnections.size(); j++) {
+				// TODO: Account for -1s?
+				// If this filter is applied to the cell we are looking at...
+				if ((relevantConnections.get(j).inStart.depth <= outcell.depth)
+						&& (relevantConnections.get(j).inStart.row <= outcell.row)
+						&& (relevantConnections.get(j).inStart.column <= outcell.column)
+						&& ((relevantConnections.get(j).inStart.depth + layers.get(layerIndex).Fdepth) >= outcell.depth)
+						&& ((relevantConnections.get(j).inStart.row + layers.get(layerIndex).Frows) >= outcell.row)
+						&& ((relevantConnections.get(j).inStart.column
+								+ layers.get(layerIndex).Fcollumns) >= outcell.column)) {
+
+					// Grab the depth, row, and column in the filter of the
+					// weight multiplied by this cell
+					// when this connection is calculated
+					int depth = (outcell.depth - relevantConnections.get(j).inStart.depth);
+					int row = (outcell.row - relevantConnections.get(j).inStart.row);
+					int column = (outcell.column - relevantConnections.get(j).inStart.column);
+
+					// Find the derivative of the total error with respect to
+					// that weight
+					// (using computePartialDerivative(LinkedList<Layer> layers,
+					// Cell[] out, int layerIndex, int filterIndex, int depth,
+					// int row, int column, double[] expected),
+					// and add the result to our sum variable.
+					dEdnet += computePartialDerivative(layers, out, layerIndex, i, depth, row, column, expected);
+				}
+			}
+		}
+
+		return dEdnet;
+	}
+
+	/**
+	 * This is a helper function for:
+	 * 
+	 * computePartialDerivative(LinkedList <Layer> layers, Cell[] out, int
+	 * layerIndex, int filterIndex, int depth, int row, int column, double[]
+	 * expected).
+	 * 
+	 * (defined within this class, IE FSONNetwork.java)
+	 * 
+	 * It handles calculating the error of a cell in the out[] array of the
+	 * network.
+	 * 
+	 * @param out
+	 *            The array of cells that store the output of this network.
+	 * @param index
+	 *            The index of the cell within "out" that we are calculating the
+	 *            error for.
+	 * @param expected
+	 *            An array representing the expected values of the cells given
+	 *            in "out".
+	 * @return The calculated cross entropy error for the cell of index "index"
+	 *         within "out".
+	 */
+	public static double computeSoftmaxError(Cell[] out, int index, double[] expected) {
+		return (out[index].value - expected[index]);
+	}
 
 }

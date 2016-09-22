@@ -115,7 +115,7 @@ public class Layer {
 	 *             Thrown when the activation function does not return a number
 	 *             (see activationFunction()).
 	 */
-	public double compute(Filter filter, Cell[][][] input, int column, int row, int depth, double bias) throws Exception {
+	public static double compute(Filter filter, Cell[][][] input, int column, int row, int depth, double bias) throws Exception {
 		double result = 0.0;
 
 		//For every cell in the input array, using depth, row, and column as the starting point,
@@ -378,8 +378,8 @@ public class Layer {
 	 * @throws Exception
 	 *             Thrown when the activation function does not return a number
 	 */
-	public double activationFunction(double x) throws Exception {
-		String function = "1/(1+E^x)";// The actual activation function, in string form
+	public static double activationFunction(double x) throws Exception {
+		String function = "1/(1+E^(0.0-x))";// The actual activation function, in string form
 
 		// Parse the function using JavaCalculus
 		CalcParser parser = new CalcParser();

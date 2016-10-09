@@ -8,6 +8,7 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
+import cnnetwork.Cell;
 import cnnetwork.Filter;
 import cnnetwork.Layer;
 import cnnetwork.LayerType;
@@ -82,16 +83,16 @@ public class TestCNNObjectStructure {
 	@Test
 	public void testBiases() {
 		//Create and initialize the biases
-		Double testBias = 0.45;
-		Double testBias2 = 0.33;
+		Cell testBias = new Cell(0.45);
+		Cell testBias2 = new Cell(0.33);
 		
 		//Add the biases to the layer
 		test.biases.add(testBias);
 		test.biases.add(testBias2);
 		
 		//Test that the biases are still there and in the right place 
-		assertEquals(test.biases.get(0), 0.45, 0);
-		assertEquals(test.biases.get(1), 0.33, 0);
+		assertEquals(test.biases.get(0).value, 0.45, 0);
+		assertEquals(test.biases.get(1).value, 0.33, 0);
 	}
 
 }

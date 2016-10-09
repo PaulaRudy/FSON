@@ -24,6 +24,7 @@ import org.opencv.objdetect.CascadeClassifier;
  * @author Paula Rudy
  *
  */
+@SuppressWarnings("unused")
 public class Align {
 
 	static CascadeClassifier face_cascade; // This holds the Haar cascade classifier for identifying potential faces TODO: remove this?

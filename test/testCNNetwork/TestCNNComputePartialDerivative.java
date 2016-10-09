@@ -28,21 +28,21 @@ public class TestCNNComputePartialDerivative {
 		// Create the list of layers that will make up our network
 		layers = new LinkedList<Layer>();
 
-		// Create and initalize the first layer
+		// Create and initialize the first layer
 		Layer l1 = new Layer(3, 3, 1, 2, 2, 1, 1, 1, 0, LayerType.CONV);
 		l1.initLayer();
 
 		// Add the first layer to the list
 		layers.add(0, l1);
 
-		// Create and initalize the second layer
+		// Create and initialize the second layer
 		Layer l2 = new Layer(2, 2, 1, 2, 2, 1, 3, 1, 0, LayerType.FULLY);
 		l2.initLayer();
 
 		// Add the second layer to the list
 		layers.add(1, l2);
 
-		// Create and initalize the array of Cell that will hold the output of
+		// Create and initialize the array of Cell that will hold the output of
 		// this network.
 		out = new Cell[3];
 		out[0] = new Cell();
@@ -75,7 +75,7 @@ public class TestCNNComputePartialDerivative {
 		// first filter of the last layer
 		// (IE Layer 2, Filter 1, coordinates [0][0][0]).
 		double testResultWeight5 = FSONNetwork.computePartialDerivative(layers, out, 1, 0, 0, 0, 0, expect);
-		assertEquals(0.00462982548833732, testResultWeight5, 0.000000001);
+		assertEquals(0.01763939922793867, testResultWeight5, 0.000000001);
 
 		// Test the calculated partial derivative of the first weight of the
 		// first filter of the first layer

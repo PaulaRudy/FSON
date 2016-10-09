@@ -20,7 +20,7 @@ public class TestCNNConvolutionFunction {
 
 	Filter testFilter0, testFilter1, testFilter2, testFilter3;
 	
-	double testBias0, testBias1, testBias2, testBias3;
+	Cell testBias0, testBias1, testBias2, testBias3;
 
 	Cell[][][] testOut;
 
@@ -94,7 +94,7 @@ public class TestCNNConvolutionFunction {
 		testFilter0 = new Filter(testFilter0Weights);
 		testLayer.filters.add(testFilter0);//Add the filter to the list of filters in the layer
 
-		testBias0 = 1;//Create a bias
+		testBias0 = new Cell(1);//Create a bias
 
 		testLayer.biases.add(testBias0); //Add the bias to the list of biases in the layer
 
@@ -122,7 +122,7 @@ public class TestCNNConvolutionFunction {
 		testFilter1 = new Filter(testFilter1Weights);
 		testLayer.filters.add(testFilter1);//Add the filter to the list of filters in the layer
 
-		testBias1 = 0;//Create a bias
+		testBias1 = new Cell(0);//Create a bias
 
 		testLayer.biases.add(testBias1); //Add the bias to the list of biases in the layer
 
@@ -150,7 +150,7 @@ public class TestCNNConvolutionFunction {
 		testFilter2 = new Filter(testFilter2Weights);
 		testLayer.filters.add(testFilter2);//Add the filter to the list of filters in the layer
 
-		testBias2 = -1; //Create a bias
+		testBias2 = new Cell(-1); //Create a bias
 
 		testLayer.biases.add(testBias2);//Add the bias to the list of biases in the layer
 
@@ -178,7 +178,7 @@ public class TestCNNConvolutionFunction {
 		testFilter3 = new Filter(testFilter3Weights);
 		testLayer.filters.add(testFilter3); //Add the filter to the list of filters in the layer
 
-		testBias3 = -2;//Create a bias
+		testBias3 = new Cell(-2);//Create a bias
 
 		testLayer.biases.add(testBias3); //Add the bias to the list of biases in the layer
 
@@ -209,29 +209,29 @@ public class TestCNNConvolutionFunction {
 		//This is an array of values we expect to see in testOut
 		double[][][] temp = new double[4][2][2];
 
-		temp[0][0][0] = 0.006692849;
+		temp[0][0][0] = 0.9933072;
 		temp[0][0][1] = 0.5;
 
-		temp[0][1][0] = 0.01798621;
-		temp[0][1][1] = 0.01798621;
+		temp[0][1][0] = 0.9820138;
+		temp[0][1][1] = 0.9820138;
 
-		temp[1][0][0] = 0.01798621;
-		temp[1][0][1] = 0.2689414;
+		temp[1][0][0] = 0.9820138;
+		temp[1][0][1] = 0.7310586;
 
-		temp[1][1][0] = 0.2689414;
-		temp[1][1][1] = 0.2689414;
+		temp[1][1][0] = 0.7310586;
+		temp[1][1][1] = 0.7310586;
 
-		temp[2][0][0] = 0.7310586;
-		temp[2][0][1] = 0.9525741;
+		temp[2][0][0] = 0.2689414;
+		temp[2][0][1] = 0.04742587;
 
-		temp[2][1][0] = 0.8807971;
-		temp[2][1][1] = 0.9525741;
+		temp[2][1][0] = 0.1192029;
+		temp[2][1][1] = 0.04742587;
 
-		temp[3][0][0] = 0.7310586;
-		temp[3][0][1] = 0.8807971;
+		temp[3][0][0] = 0.2689414;
+		temp[3][0][1] = 0.1192029;
 
-		temp[3][1][0] = 0.9525741;
-		temp[3][1][1] = 0.2689414;
+		temp[3][1][0] = 0.04742587;
+		temp[3][1][1] = 0.7310586;
 
 		//Compare the temp array to the values stored in the output array
 		for (int i = 0; i < temp.length; i++) {

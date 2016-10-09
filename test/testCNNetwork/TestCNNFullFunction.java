@@ -20,7 +20,7 @@ public class TestCNNFullFunction {
 
 	Filter testFilter0, testFilter1, testFilter2;
 
-	double testBias0, testBias1, testBias2;
+	Cell testBias0, testBias1, testBias2;
 
 	Cell[] testOut;
 
@@ -112,7 +112,7 @@ public class TestCNNFullFunction {
 		testFilter0 = new Filter(testFilter0Weights);
 		testLayer.filters.add(testFilter0);//Add the filter to the list of filters in the layer
 
-		testBias0 = 1;//Create a bias
+		testBias0 = new Cell(1);//Create a bias
 
 		testLayer.biases.add(testBias0);//Add the bias to the list of biases in the layer
 
@@ -158,7 +158,7 @@ public class TestCNNFullFunction {
 		testFilter1 = new Filter(testFilter1Weights);
 		testLayer.filters.add(testFilter1);//Add the filter to the list of filters in the layer
 
-		testBias1 = 0;//Create a bias
+		testBias1 = new Cell(0);//Create a bias
 
 		testLayer.biases.add(testBias1);//Add the bias to the list of biases in the layer
 
@@ -204,7 +204,7 @@ public class TestCNNFullFunction {
 		testFilter2 = new Filter(testFilter2Weights);
 		testLayer.filters.add(testFilter2);//Add the filter to the list of filters in the layer
 
-		testBias2 = -1;//Create a bias
+		testBias2 = new Cell(-1);//Create a bias
 
 		testLayer.biases.add(testBias2);//Add the bias to the list of biases in the layer
 
@@ -225,9 +225,9 @@ public class TestCNNFullFunction {
 		//This is an array of values we expect to see in testOut
 		double[] temp = new double[3];
 
-		temp[0] = 0.0009110505;
-		temp[1] = 0.9820138;
-		temp[2] = 0.000000002061151;
+		temp[0] = 0.9990889;
+		temp[1] = 0.01798621;
+		temp[2] = 1.0;
 
 		//Compare the temp array to the values stored in the output array
 		for (int i = 0; i < temp.length; i++) {

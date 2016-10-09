@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
+import cnnetwork.Cell;
 import cnnetwork.Filter;
 import cnnetwork.Layer;
 import cnnetwork.LayerType;
@@ -18,7 +19,7 @@ public class TestCNNComputeFunction {
 	Layer testLayer;
 	double[][][] testFilterWeights;
 	
-	double testBias;
+	Cell testBias;
 
 	/**
 	 * @throws java.lang.Exception
@@ -93,24 +94,24 @@ public class TestCNNComputeFunction {
 
 		testLayer.filters.add(testFilter);//Actually add the filter to the list of filters in the layer
 
-		testBias = 1;//Create a bias
+		testBias = new Cell(1);//Create a bias
 
 		testLayer.biases.add(testBias);//Add the bias to the list of biases in the filter
 	}
 
 	@Test
 	public void testCompute() throws Exception {
-		double result0 = testLayer.compute(testLayer.filters.get(0), testLayer.cells, 0, 0, 0,
+		double result0 = Layer.compute(testLayer.filters.get(0), testLayer.cells, 0, 0, 0,
 				testLayer.biases.get(0));
-		assertEquals(result0, 0.006692849, 0);
+		assertEquals(result0, 0.9933072, 0);
 	
-		double result1 = testLayer.compute(testLayer.filters.get(0), testLayer.cells, 1, 1, 0,
+		double result1 = Layer.compute(testLayer.filters.get(0), testLayer.cells, 1, 1, 0,
 				testLayer.biases.get(0));
-		assertEquals(result1, 0.01798621, 0);
+		assertEquals(result1, 0.9820138, 0);
 
-		double result2 = testLayer.compute(testLayer.filters.get(0), testLayer.cells, 0, 1, 0,
+		double result2 = Layer.compute(testLayer.filters.get(0), testLayer.cells, 0, 1, 0,
 				testLayer.biases.get(0));
-		assertEquals(result2, 0.01798621, 0);
+		assertEquals(result2, 0.9820138, 0);
 	}
 
 }

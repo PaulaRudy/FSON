@@ -27,7 +27,7 @@ public class Layer {
 	public int K;// The number of filters to be applied to this layer
 	public int step;// The "step" of the layer- the number of columns and rows between the filters
 	public int pad;// The number of zeros appended to the rows and columns at the edge of the layer when applying the filters.
-	public LinkedList<Double> biases;// The list of biases to be applied, in the same order as the list of filters.
+	public LinkedList<Cell> biases;// The list of biases to be applied, in the same order as the list of filters.
 	public LinkedList<Filter> filters;// The list of filters to be applied, in the same order as the list of biases.
 	public final LayerType type;// The type of this layer. This determines how the values for the next layer are calculated.
 	public Cell[][][] cells;// The actual 3 dimensional array that stores the cells for this layer.
@@ -43,7 +43,7 @@ public class Layer {
 		this.K = k;
 		this.step = step;
 		this.pad = pad;
-		this.biases = new LinkedList<Double>();
+		this.biases = new LinkedList<Cell>();
 		this.filters = new LinkedList<Filter>();
 		this.type = type;
 		this.cells = new Cell[depth][rows][collumns];
@@ -73,7 +73,7 @@ public class Layer {
 			for (int x = 0; x < this.Fdepth; x++) {
 				for (int y = 0; y < this.Frows; y++) {
 					for (int z = 0; z < this.Fcollumns; z++) {
-						newFilterWeights[x][y][z] = 1; 
+						newFilterWeights[x][y][z] = 0.5; 
 					}
 				}
 			}
@@ -84,7 +84,7 @@ public class Layer {
 															// filter weights
 			this.filters.add(newFilter);// Actually add the filter to the list of
 										// filters in the layer
-			double newBias = 1;// Create the bias for this filter
+			Cell newBias = new Cell(1);// Create the bias for this filter
 			this.biases.add(newBias);// Add the bias to the list of biases in the
 									// layer.
 		}
@@ -115,7 +115,7 @@ public class Layer {
 	 *             Thrown when the activation function does not return a number
 	 *             (see activationFunction()).
 	 */
-	public static double compute(Filter filter, Cell[][][] input, int column, int row, int depth, double bias) throws Exception {
+	public static double compute(Filter filter, Cell[][][] input, int column, int row, int depth, Cell bias) throws Exception {
 		double result = 0.0;
 
 		//For every cell in the input array, using depth, row, and column as the starting point,
@@ -128,7 +128,7 @@ public class Layer {
 			}
 
 		}
-		result += bias;//Add the bias
+		result += bias.value;//Add the bias
 		
 		//Use the activation function to determine actual value (limited between 0 and 1).
 		result = activationFunction(result);
@@ -203,7 +203,7 @@ public class Layer {
 	 *             (see activationFunction()).
 	 */
 	public void convolution(Cell[][][] input, LinkedList<Filter> filters, Cell[][][] output, int step,
-			int padding, LinkedList<Double> biases) throws Exception {
+			int padding, LinkedList<Cell> biases) throws Exception {
 
 		// For every filter and bias in the list
 		for (int l = 0; l < filters.size(); l++) {
@@ -301,7 +301,7 @@ public class Layer {
 	 *             (see activationFunction()).
 	 */
 	public void local(Cell[][][] input, LinkedList<Filter> filters, Cell[][][] output, int step, int padding,
-			LinkedList<Double> biases) throws Exception {
+			LinkedList<Cell> biases) throws Exception {
 
 		int filterNum = 0;//This is used to iterate over the list of filters ("filters") and biases ("biases").
 		
@@ -355,7 +355,7 @@ public class Layer {
 	 *             (see activationFunction()).
 	 */
 	public void full(Cell[][][] input, LinkedList<Filter> filters, Cell[] output, int step, int padding,
-			LinkedList<Double> biases) throws Exception {
+			LinkedList<Cell> biases) throws Exception {
 		//Apply each filter to the input.
 		//Because this is a fully connected layer, each filter is applied to the entire input array,
 		// so we do not need to iterate over the input (the "compute" function will iterate through 

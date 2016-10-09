@@ -20,8 +20,8 @@ public class TestCNNActivationFunction {
 
 	@Test
 	public void test() throws Exception {
-		double result = testLayer.activationFunction(2);
-		assertEquals(result, 0.1192029, 0);
+		double result = Layer.activationFunction(2);
+		assertEquals(result, 0.8807971, 0);
 	}
 
 }

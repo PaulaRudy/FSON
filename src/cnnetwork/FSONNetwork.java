@@ -1,14 +1,19 @@
 package cnnetwork;
 
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+
+import javax.imageio.ImageIO;
 
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
+import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
 import image.Align;
@@ -158,7 +163,7 @@ public class FSONNetwork {
 
 	/**
 	 * This function computes the partial derivative of the total error with
-	 * respect to a given weight within a network. This is a recursive function
+	 * respect to a given *weight* within a network. This is a recursive function
 	 * that operates with the help of the other function with this name and the
 	 * call signature:
 	 * 
@@ -301,13 +306,147 @@ public class FSONNetwork {
 		}
 
 	}
+	
+	/**
+	 * This function computes the partial derivative of the total error with
+	 * respect to a given *bias* within a network. This is a recursive function
+	 * that operates with the help of the other function with this name and the
+	 * call signature:
+	 * 
+	 * computePartialDerivative(LinkedList<Layer> layers, Cell[] out, int
+	 * layerIndex, CellCoord outcell, double[] expected)
+	 * 
+	 * and
+	 * 
+	 * computeSoftmaxError()
+	 * 
+	 * (both defined in this class file- IE FSONNetwork.java).
+	 * 
+	 * @param layers
+	 *            The layers that make up this network.
+	 * @param out
+	 *            The array of cells that store the output of this network.
+	 * @param layerIndex
+	 *            The index within "layers" of the layer in which the bias that
+	 *            we are exploring currently resides.
+	 * @param biasIndex
+	 *            The index within the list "biases" of the bias that we are
+	 *            exploring currently.
+	 * @param expected
+	 *            The array of cells that represent the expected values of
+	 *            "out".
+	 * @return The calculated partial derivative of the total error with respect
+	 *         to a given bias.
+	 * @throws Exception
+	 *             This exception is thrown when a problem occurs while
+	 *             calculating the activation function for a cell. See
+	 *             Layer::activationFunction() for more details.
+	 *             
+	 * TODO: error checking to make sure we're not on a maxpool layer
+	 */
+	public static double computePartialDerivative(LinkedList<Layer> layers, Cell[] out, int layerIndex, int biasIndex, double[] expected) throws Exception{
+		// If there is already a value stored for this partial derivative...
+		if (layers.get(layerIndex).biases.get(biasIndex).derivative != -1) {
+			// ...then just use that
+			return layers.get(layerIndex).biases.get(biasIndex).derivative;
+		} else {
+
+			// This will hold the sum of all the calculated partial derivatives
+			// of all the connections that use this bias
+			// (with respect to this bias)
+			// IE: Sum( dNet(i) / dbias) 
+			// where i = the net value of each connection's outcell
+			double sum = 0;
+
+			// For each filter in this layer
+			for (int i = 0; i < layers.get(layerIndex).filters.size(); i++) {
+				Filter currentFilter = layers.get(layerIndex).filters.get(i);
+
+				//For each connection for this filter
+				for (int j = 0; j < currentFilter.connections.size(); j++){
+					FilterConnection currentConnection = currentFilter.connections.get(j);
+
+					//If this connection uses the bias we are looking at...
+					if (currentConnection.biasIndex == biasIndex){
+
+						// Since 1 is the only thing multiplied by the bias when
+						// calculating, that means that 1 is the derivative of
+						// the net of this output cell with respect to this bias(IE
+						// dnet/dbias). 
+						// 
+						// So we can ignore dnet/dbias in our calculations.
+
+						// If this is NOT the last layer, but there is a derivative
+						// value already stored in the "out" cell for this
+						// connection...
+						if (((layerIndex + 1) < layers.size()) && (layers.get(layerIndex
+								+ 1).cells[currentConnection.out.depth][currentConnection.out.row][currentConnection.out.column].derivative != -1)) {
+							
+							// ... use that stored derivative value.
+							//
+							// Since 1 is the only thing multiplied by the bias when
+							// calculating, that means that 1 is the derivative of
+							// the net of this output cell with respect to this bias(IE
+							// dnet/dbias). So we can ignore dnet/dbias in our 
+							// calculations.
+							sum += (layers.get(layerIndex
+									+ 1).cells[currentConnection.out.depth][currentConnection.out.row][currentConnection.out.column].derivative);
+						} else {
+
+							// Find the net value of the output cell:
+							double cellOut = Layer.compute(layers.get(layerIndex).filters.get(biasIndex),
+									layers.get(layerIndex).cells, currentConnection.inStart.column,
+									currentConnection.inStart.row, currentConnection.inStart.depth,
+									layers.get(layerIndex).biases.get(biasIndex));
+
+							// This is the calculated derivative of the out value with
+							// respect to net for this cell. IE dout/dnet
+							double doutdnet = cellOut * (1 - cellOut);
+
+							// If this is the last layer (IE the layer before "out"):
+							if ((layerIndex + 1) == layers.size()) {
+								
+								// Note that since 1 is the only thing
+								// multiplied by the bias when calculating, that
+								// means that 1 is the derivative of the net of
+								// this output cell with respect to this bias(IE
+								// dnet/dbias). So we can ignore dnet/dbias in
+								// our calculations.
+								sum += (doutdnet * computeSoftmaxError(out, currentConnection.out.depth, expected));
+								
+							} else {
+								
+								// Continue to recursively calculate the derivative
+								//
+								// Note that since 1 is the only thing
+								// multiplied by the bias when calculating, that
+								// means that 1 is the derivative of the net of
+								// this output cell with respect to this bias(IE
+								// dnet/dbias). So we can ignore dnet/dbias in
+								// our calculations.
+								sum += (doutdnet * computePartialDerivative(layers, out, (layerIndex + 1),
+										currentConnection.out, expected));
+							}
+						}
+
+					}
+				}
+			}
+			return sum;
+		}
+	}
 
 	/**
-	 * This is a helper function to the function with the call signature:
+	 * This is a helper function to the functions with the call signature:
 	 * 
 	 * computePartialDerivative(LinkedList<Layer> layers, Cell[] out, int
 	 * layerIndex, int filterIndex, int depth, int row, int column, double[]
 	 * expected)
+	 * 
+	 * and
+	 * 
+	 * computePartialDerivative(LinkedList<Layer> layers, Cell[] out, int
+	 * layerIndex, int biasIndex, double[] expected)
 	 * 
 	 * (defined in this class file- IE FSONNetwork.java).
 	 * 
@@ -321,7 +460,7 @@ public class FSONNetwork {
 	 * @param layers
 	 *            The layers that make up this network.
 	 * @param out
-	 *            c
+	 *            The array of cells that store the output of this network.
 	 * @param layerIndex
 	 *            The index within "layers" of the layer in which the cell of
 	 *            interest resides.
@@ -337,12 +476,12 @@ public class FSONNetwork {
 	 *             This exception is thrown when a problem occurs while
 	 *             calculating the activation function for a cell, via the
 	 *             parent function of this name. See:
-	 *             
+	 * 
 	 *             FSONNetwork::computePartialDerivative(LinkedList
 	 *             <Layer> layers, Cell[] out, int layerIndex, int filterIndex,
-	 *             int depth, int row, int column, double[] expected) 
-	 *             
-	 *             ...for more details.
+	 *             int depth, int row, int column, double[] expected)
+	 * 
+	 *             ...for more details. TODO: store derivatives
 	 */
 	private static Double computePartialDerivative(LinkedList<Layer> layers, Cell[] out, int layerIndex,
 			CellCoord outcell, double[] expected) throws Exception {
@@ -415,6 +554,335 @@ public class FSONNetwork {
 	 */
 	public static double computeSoftmaxError(Cell[] out, int index, double[] expected) {
 		return (out[index].value - expected[index]);
+	}
+	
+	/**
+	 * This function is used to increment a single weight within a filter during
+	 * the learning process.
+	 * 
+	 * @param learningRate
+	 *            The learning rate of the learning process. How "far" each
+	 *            weight moves per increment.
+	 * @param layers
+	 *            The layers that make up this network.
+	 * @param out
+	 *            The array of cells that store the output of this network.
+	 * @param layerIndex
+	 *            The index within "layers" of the layer in which the filter
+	 *            which contains the weight (that we are incrementing) resides.
+	 * @param filterIndex
+	 *            The index within the list "filters" of the filter that
+	 *            contains the weight (that we are incrementing) resides.
+	 * @param depth
+	 *            The depth coordinate (addressed in the order
+	 *            [depth][row][column]) of the weight (that we are incrementing)
+	 *            within the filter.
+	 * @param row
+	 *            The row coordinate (addressed in the order
+	 *            [depth][row][column]) of the weight (that we are incrementing)
+	 *            within the filter.
+	 * @param column
+	 *            The column coordinate (addressed in the order
+	 *            [depth][row][column]) of the weight (that we are incrementing)
+	 *            within the filter.
+	 * @param expected
+	 *            The array of cells that represent the expected values of
+	 *            "out".
+	 * @return The calculated new value to use for the weight.
+	 * @throws Exception
+	 *             This exception is thrown when a problem occurs while
+	 *             calculating the activation function for a cell, via the
+	 *             "computePartialDerivative" function(s). See
+	 *             Layer::activationFunction() for more details.
+	 */
+	public static double stepGradient(double learningRate, LinkedList<Layer> layers, Cell[] out, int layerIndex, int filterIndex, int depth, int row, int column, double[] expected) throws Exception{
+		double weight = layers.get(layerIndex).filters.get(filterIndex).weights[depth][row][column];
+		double dEdweight = computePartialDerivative(layers, out, layerIndex, filterIndex, depth, row, column, expected);
+		return (weight - (learningRate * dEdweight));
+	}
+	
+	/**
+	 * This function is used to increment a single bias during the learning process.
+	 * 
+	 * @param learningRate
+	 *            The learning rate of the learning process. How "far" each
+	 *            bias moves per increment.
+	 * @param layers
+	 *            The layers that make up this network
+	 * @param out
+	 *            The array of cells that store the output of this network.
+	 * @param layerIndex
+	 *            The index within "layers" of the layer in which the bias of
+	 *            interest resides.
+	 * @param biasIndex
+	 *            The index within "biases" of the layer in which the bias resides.
+	 * @param expected
+	 *            The array of cells that represent the expected values of
+	 *            "out".
+	 * @return The calculated new value to use for the bias.
+	 * @throws Exception
+	 *             This exception is thrown when a problem occurs while
+	 *             calculating the activation function for a cell, via the
+	 *             "computePartialDerivative" function(s). See
+	 *             Layer::activationFunction() for more details.
+	 */
+	public static double stepGradient(double learningRate, LinkedList<Layer> layers, Cell[] out, int layerIndex, int biasIndex, double[] expected) throws Exception{
+		double bias = layers.get(layerIndex).biases.get(biasIndex).value;
+		double dEdbias = computePartialDerivative(layers, out, layerIndex, biasIndex, expected);
+		return (bias - (learningRate * dEdbias));
+	}
+	
+	/**
+	 * This function is the main function from which learning occurs. It is a
+	 * stochastic gradient descent model.
+	 * 
+	 * @param learningRate
+	 *            The learning rate of the learning process. How "far" each bias
+	 *            or weight moves per increment.
+	 * @param layers
+	 *            The layers that make up this network
+	 * @param out
+	 *            The array of cells that store the output of this network.
+	 * @param input
+	 *            An array containing the filenames associated with the input to
+	 *            use for learning in string form.
+	 * @param iterations
+	 *            How many times every weight and bias in the network is
+	 *            incremented. One iteration means every bias and weight is
+	 *            moved once, using a single example input.
+	 * @throws Exception
+	 *             This exception is thrown when a problem occurs while
+	 *             calculating the activation function for a cell. See
+	 *             Layer::activationFunction() for more details.
+	 * @throws IOException
+	 *             Thrown if there is a problem locating or opening the file for
+	 *             input. See openFileInput (declared in this class file) for
+	 *             more details.
+	 */
+	public static void learn(double learningRate, LinkedList<Layer> layers, Cell[] out, String[] input, int iterations) throws Exception {
+
+		//Generate the "dictionary". This is an array of the expected outputs for each input. Since the "perfect" expected output for a given input is simply an array with all the entries are 0 but the one associated with the correct classification (which is 1), we can fill this out beforehand.
+		double[][] dictionary = new double[input.length][input.length];
+		for (int t = 0; t < input.length; t++){
+			dictionary[t][t] = 1;
+		}
+			
+		//For the requested number of iterations...
+		for (int i = 0; i < iterations; i++) {
+			
+			//1. Pick an example, feed it forward through the network:
+			//1.a) Generate a random order in which to access the input:
+			ArrayList<Integer> randomList = UniqueRandomNumbers.getRandomSet(input.length);
+			
+			//1.b) Use "randomList" to access each input entry in a random order
+			for (int r=0; r < input.length; r++) {
+				int s = randomList.get(r);
+				
+				//1.b.i) Open the next input file denoted by the string stored in the input array, in a random order, and feed that input into the first layer
+				openFileInputBW(layers, input[s]);
+				
+				//1.b.ii) Feed the input through the rest of the network
+				feedForward(layers, out);
+				Layer.softmax(out);
+				
+				//2. Increment all weights:
+				
+				//2.a) Increment all weights for all the layers, working backward.
+				for(int j = (layers.size() -1); j >= 0 ; j--){
+					Layer currentLayer = layers.get(j);
+					
+					//2.a.i) Increment all weights for all the filters for this layer ("currentLayer")
+					for(int f = 0; f< currentLayer.filters.size(); f++){
+						Filter currentFilter = currentLayer.filters.get(f);
+						
+						//2.a.i.1) Increment each weight within this filter ("currentFilter")
+						for (int x = 0; x < currentLayer.Fdepth; x++) {
+							for (int y = 0; y < currentLayer.Frows; y++) {
+								for (int z = 0; z < currentLayer.Fcollumns; z++) {
+									// Note that "dictionary[s]" is used because the sth entry in the dictionary is the expected output for this input ("input[s]")
+									currentFilter.weights[x][y][z] = stepGradient(learningRate, layers, out, j, f, x, y, z, dictionary[s]);
+								}
+							}
+						}	
+					}
+					
+					//2.b) Increment all the biases for this layer:
+					for(int b = 0; b< currentLayer.biases.size(); b++){
+						// Note that "dictionary[s]" is used because the sth entry in the dictionary is the expected output for this input ("input[s]")
+						currentLayer.biases.get(b).value = stepGradient(learningRate, layers, out, j, b, dictionary[s]);	
+					}
+					
+					
+				}
+				
+				// 3. Reset stored gradients				
+				// 3.a) Reset all stored gradients for all layers
+				for (int j= 0; j < layers.size(); j++) {
+					Layer currentLayer = layers.get(j);
+
+					// 3.a) Reset all stored gradients for all the filters for this layer ("currentLayer")
+					for (int f = 0; f< currentLayer.filters.size(); f++) {
+						Filter currentFilter = currentLayer.filters.get(f);
+
+						// 3.a.i) Reset all stored gradients for each weight within this filter ("currentFilter")
+						for (int x = 0; x < currentLayer.Fdepth; x++) {
+							for (int y = 0; y < currentLayer.Frows; y++) {
+								for (int z = 0; z < currentLayer.Fcollumns; z++) {
+									currentFilter.gradientValues[x][y][z] = -1;
+								}
+							}
+						}
+					}
+
+					//3.b) Reset all stored gradients for all the biases for this layer
+					for (int b = 0; b < currentLayer.biases.size(); b++) {
+						currentLayer.biases.get(b).derivative = -1;
+					}
+
+				}
+			}
+			
+			
+
+		}
+
+	}
+
+	/**
+	 * This function opens a single file (indicated by the filename passed in as
+	 * a string), and feeds that file as input into the first layer of the
+	 * network
+	 * 
+	 * @param layers
+	 *            The layers that make up this network
+	 * @param filename
+	 *            The filename of the file to be opened/used, in string form.
+	 *            Note that the file must be in same location as Align class
+	 *            file.
+	 * @throws IOException
+	 *             Thrown if there is a problem locating or opening the file.
+	 */
+	public static void openFileInput(LinkedList<Layer> layers, String filename) throws IOException {
+		// The file named here must be in same location as Align class file
+		BufferedImage image = ImageIO.read(Align.class.getResource(filename));
+
+		// This is necessary to use any of the OpenCV functions
+		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+
+		// First, convert the image to an OpenCV Mat.
+		// This function can be found in image.Align.java
+		Mat test = Align.bufferedImageToMat(image);
+
+		// Next, resize the image to the size needed.
+		Mat resizedImage = new Mat();
+		Size sz = new Size(layers.get(0).collumns, layers.get(0).rows);
+		Imgproc.resize(test, resizedImage, sz);
+
+		// Split the image into desired number of color channels
+		List<Mat> channels = new ArrayList<Mat>(3);// Channels are stored here
+													// in the order RGB
+		Core.split(resizedImage, channels);
+
+		// For each channel...
+		for (int c = 0; c < channels.size(); c++) {
+
+			// Feed the individual pixel values into a temporary array...
+			channels.get(c).convertTo(channels.get(c), CvType.CV_64FC3);
+			int size = (int) (channels.get(c).total() * channels.get(c).channels());
+			double[] temp = new double[size];
+			channels.get(c).get(0, 0, temp);
+
+			// ...and then into the cells of the first layer of the network.
+			for (int d = 0; d < layers.get(0).rows; d++) {
+				for (int e = 0; e < layers.get(0).collumns; e++) {
+					layers.get(0).cells[c][d][e].value = temp[(d * layers.get(0).rows) + e];
+				}
+
+			}
+
+		}	
+	}
+	
+	public static void openFileInputBW(LinkedList<Layer> layers, String filename){
+		
+		URL location = FSONNetwork.class.getProtectionDomain().getCodeSource().getLocation();
+		
+		String urlString = location.toString();
+		
+		String substr = urlString.substring(5, (urlString.length() - 4));
+		
+		String absPath = substr.concat(filename);
+		// This is necessary to use any of the OpenCV functions
+		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+		Mat img = Highgui.imread(absPath, 0);
+		
+		if (img.cols() == 0) {
+		     System.out.println("Error reading file");
+		}
+		
+		// Next, resize the image to the size needed.
+		Mat resizedImage = new Mat();
+		Size sz = new Size(layers.get(0).collumns, layers.get(0).rows);
+		Imgproc.resize(img, resizedImage, sz);
+		
+		// ...and then into the cells of the first layer of the network.
+		for (int d = 0; d < layers.get(0).rows; d++) {
+			for (int e = 0; e < layers.get(0).collumns; e++) {
+				layers.get(0).cells[0][d][e].value = (255-resizedImage.get(d, e)[0]);
+			}
+
+		}
+
+	}
+
+	/**
+	 * This function carries out a single forward pass through the network.
+	 * Please note that the desired input must already be loaded into the first
+	 * layer before calling this function (you can use "openFileInput" defined
+	 * in this class for this purpose).
+	 * 
+	 * @param layers
+	 *            The layers that make up this network
+	 * @param out
+	 *            The array of cells that store the output of this network.
+	 * @throws Exception
+	 *             This exception is thrown when a problem occurs while
+	 *             calculating the activation function for a cell. See
+	 *             Layer::activationFunction() for more details.
+	 */
+	public static void feedForward(LinkedList<Layer> layers, Cell[] out) throws Exception {
+
+		for (int i = 0; i < (layers.size() - 1); i++) {
+			Layer currentLayer = layers.get(i);
+			Layer nextLayer = layers.get(i + 1);
+
+			switch (currentLayer.type) {
+			case CONV:
+				currentLayer.convolution(currentLayer.cells, currentLayer.filters, nextLayer.cells, currentLayer.step,
+						currentLayer.pad, currentLayer.biases);
+				break;
+			case FULLY:
+				currentLayer.full(currentLayer.cells, currentLayer.filters, nextLayer.cells[0][0], currentLayer.step,
+						currentLayer.pad, currentLayer.biases);
+				break;
+			case LOCAL:
+				currentLayer.local(currentLayer.cells, currentLayer.filters, nextLayer.cells, currentLayer.step,
+						currentLayer.pad, currentLayer.biases);
+				break;
+			case MAXPOOL:
+				currentLayer.pool(currentLayer.cells, currentLayer.filters, nextLayer.cells, currentLayer.step,
+						currentLayer.Fcollumns);
+				break;
+			default:
+				// TODO:Throw exception/error here
+				break;
+
+			}
+		}
+
+		Layer lastLayer = layers.getLast();
+		lastLayer.full(lastLayer.cells, lastLayer.filters, out, lastLayer.step, lastLayer.pad, lastLayer.biases);
+
 	}
 
 }

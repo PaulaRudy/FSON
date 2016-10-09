@@ -21,7 +21,7 @@ public class TestCNNLocalFunction {
 	Filter testFilter0, testFilter1, testFilter2, testFilter3, testFilter4, testFilter5, testFilter6, testFilter7,
 			testFilter8, testFilter9, testFilter10, testFilter11;
 
-	double testBias0, testBias1, testBias2, testBias3, testBias4, testBias5, testBias6, testBias7, testBias8, testBias9,
+	Cell testBias0, testBias1, testBias2, testBias3, testBias4, testBias5, testBias6, testBias7, testBias8, testBias9,
 			testBias10, testBias11;
 
 	Cell[][][] testOut;
@@ -110,9 +110,9 @@ public class TestCNNLocalFunction {
 		testLayer.filters.add(testFilter2);
 		
 		//Create the biases for the first three filters
-		testBias0 = 1;
-		testBias1 = 0;
-		testBias2 = -1;
+		testBias0 = new Cell(1);
+		testBias1 = new Cell(0);
+		testBias2 = new Cell(-1);
 
 		//Add the biases to the list of biases in the layer
 		testLayer.biases.add(testBias0);
@@ -157,9 +157,9 @@ public class TestCNNLocalFunction {
 		testLayer.filters.add(testFilter5);
 
 		//Create the biases for the filters
-		testBias3 = 2;
-		testBias4 = 1;
-		testBias5 = 0;
+		testBias3 = new Cell(2);
+		testBias4 = new Cell(1);
+		testBias5 = new Cell(0);
 
 		//Add the biases to the list of biases in the layer
 		testLayer.biases.add(testBias3);
@@ -204,9 +204,9 @@ public class TestCNNLocalFunction {
 		testLayer.filters.add(testFilter8);
 
 		//Create the biases for the filters
-		testBias6 = 0;
-		testBias7 = 1;
-		testBias8 = -1;
+		testBias6 = new Cell(0);
+		testBias7 = new Cell(1);
+		testBias8 = new Cell(-1);
 
 		//Add the biases to the list of biases in the layer
 		testLayer.biases.add(testBias6);
@@ -251,9 +251,9 @@ public class TestCNNLocalFunction {
 		testLayer.filters.add(testFilter11);
 
 		//Create the biases for the filters
-		testBias9 = 3;
-		testBias10 = 1;
-		testBias11 = 0;
+		testBias9 = new Cell(3);
+		testBias10 = new Cell(1);
+		testBias11 = new Cell(0);
 
 		//Add the biases to the list of biases in the layer
 		testLayer.biases.add(testBias9);
@@ -288,23 +288,23 @@ public class TestCNNLocalFunction {
 		//This is an array of values we expect to see in testOut
 		double[][][] temp = new double[3][2][2];
 
-		temp[0][0][0] = 0.006692849;
+		temp[0][0][0] = 0.9933072;
 		temp[0][0][1] = 0.5;
 
-		temp[0][1][0] = 0.7310586;
-		temp[0][1][1] = 0.1192029;
+		temp[0][1][0] = 0.2689414;
+		temp[0][1][1] = 0.8807971;
 
 		temp[1][0][0] = 0.5;
 		temp[1][0][1] = 0.5;
 
-		temp[1][1][0] = 0.9525741;
-		temp[1][1][1] = 0.04742587;
+		temp[1][1][0] = 0.04742587;
+		temp[1][1][1] = 0.9525741;
 
 		temp[2][0][0] = 0.5;
-		temp[2][0][1] = 0.01798621;
+		temp[2][0][1] = 0.9820138;
 
-		temp[2][1][0] = 0.04742587;
-		temp[2][1][1] = 0.2689414;
+		temp[2][1][0] = 0.9525741;
+		temp[2][1][1] = 0.7310586;
 
 		//Compare the temp array to the values stored in the output array
 		for (int i = 0; i < temp.length; i++) {

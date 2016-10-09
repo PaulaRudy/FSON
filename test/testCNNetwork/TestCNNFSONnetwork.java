@@ -73,7 +73,7 @@ public class TestCNNFSONnetwork {
 			
 			Filter newFilter = new Filter(newFilterWeights);//Use the default constructor with the newly created filter weights
 			l1.filters.add(newFilter);//Actually add the filter to the list of filters in the layer
-			double newBias = 1;//Create the bias for this filter
+			Cell newBias = new Cell(1);//Create the bias for this filter
 			l1.biases.add(newBias);//Add the bias to the list of biases in the layer.
 		}
 
@@ -111,7 +111,7 @@ public class TestCNNFSONnetwork {
 
 			Filter newFilter = new Filter(newFilterWeights);//Use the default constructor with the newly created filter weights
 			l3.filters.add(newFilter);//Actually add the filter to the list of filters in the layer
-			double newBias = 1;//Create the bias for this filter
+			Cell newBias = new Cell(1);//Create the bias for this filter
 			l3.biases.add(newBias);//Add the bias to the list of biases in the layer.
 		}
 
@@ -149,7 +149,7 @@ public class TestCNNFSONnetwork {
 
 			Filter newFilter = new Filter(newFilterWeights);//Use the default constructor with the newly created filter weights
 			l5.filters.add(newFilter);//Actually add the filter to the list of filters in the layer
-			double newBias = 1;//Create the bias for this filter
+			Cell newBias = new Cell(1);//Create the bias for this filter
 			l5.biases.add(newBias);//Add the bias to the list of biases in the layer.
 		}
 
@@ -171,7 +171,7 @@ public class TestCNNFSONnetwork {
 
 			Filter newFilter = new Filter(newFilterWeights);//Use the default constructor with the newly created filter weights
 			l6.filters.add(newFilter);//Actually add the filter to the list of filters in the layer
-			double newBias = 1;//Create the bias for this filter
+			Cell newBias = new Cell(1);//Create the bias for this filter
 			l6.biases.add(newBias);//Add the bias to the list of biases in the layer.
 		}
 
@@ -193,7 +193,7 @@ public class TestCNNFSONnetwork {
 
 			Filter newFilter = new Filter(newFilterWeights);//Use the default constructor with the newly created filter weights
 			l7.filters.add(newFilter);//Actually add the filter to the list of filters in the layer
-			double newBias = 1;//Create the bias for this filter
+			Cell newBias = new Cell(1);//Create the bias for this filter
 			l7.biases.add(newBias);//Add the bias to the list of biases in the layer.
 		}
 
@@ -215,7 +215,7 @@ public class TestCNNFSONnetwork {
 
 			Filter newFilter = new Filter(newFilterWeights);//Use the default constructor with the newly created filter weights
 			l8.filters.add(newFilter);//Actually add the filter to the list of filters in the layer
-			double newBias = 1;//Create the bias for this filter
+			Cell newBias = new Cell(1);//Create the bias for this filter
 			l8.biases.add(newBias);//Add the bias to the list of biases in the layer.
 		}
 
@@ -260,13 +260,37 @@ public class TestCNNFSONnetwork {
 
 	@Test
 	public void test() throws Exception {
+		
+		//Test that using the "calculate" function in FSONNetwork results in the same values as doing it manually
 		FSONNetwork test = new FSONNetwork();
-		
 		test.calculate(image);
-		
-		//Test that using the functions in FSONNetwork results in the same values as doing it manually
 		for (int i = 0; i < out.length; i++) {
 			assertEquals(out[i].value, test.out[i].value, 0);
+		}
+		
+		//Test that using the "openFileInput" function in FSONNetwork results in the same values as doing it manually
+		FSONNetwork test2 = new FSONNetwork();
+		FSONNetwork.openFileInput(test2.layers, "print.jpg");
+		test2.layers.get(0).convolution(test2.layers.get(0).cells, test2.layers.get(0).filters, test2.layers.get(1).cells, test2.layers.get(0).step, test2.layers.get(0).pad, test2.layers.get(0).biases);
+		test2.layers.get(1).pool(test2.layers.get(1).cells, test2.layers.get(1).filters, test2.layers.get(2).cells, test2.layers.get(1).step, test2.layers.get(1).Fcollumns);
+		test2.layers.get(2).convolution(test2.layers.get(2).cells, test2.layers.get(2).filters, test2.layers.get(3).cells, test2.layers.get(2).step, test2.layers.get(2).pad, test2.layers.get(2).biases);
+		test2.layers.get(3).pool(test2.layers.get(3).cells, test2.layers.get(3).filters, test2.layers.get(4).cells, test2.layers.get(3).step, test2.layers.get(3).Fcollumns);
+		test2.layers.get(4).convolution(test2.layers.get(4).cells, test2.layers.get(4).filters, test2.layers.get(5).cells, test2.layers.get(4).step, test2.layers.get(4).pad, test2.layers.get(4).biases);
+		test2.layers.get(5).local(test2.layers.get(5).cells, test2.layers.get(5).filters, test2.layers.get(6).cells, test2.layers.get(5).step, test2.layers.get(5).pad, test2.layers.get(5).biases);
+		test2.layers.get(6).full(test2.layers.get(6).cells, test2.layers.get(6).filters, test2.layers.get(7).cells[0][0], test2.layers.get(6).step, test2.layers.get(6).pad, test2.layers.get(6).biases);
+		test2.layers.get(7).full(test2.layers.get(7).cells, test2.layers.get(7).filters, test2.out, test2.layers.get(7).step, test2.layers.get(7).pad, test2.layers.get(7).biases);
+		Layer.softmax(test2.out);
+		for (int i = 0; i < out.length; i++) {
+			assertEquals(out[i].value, test2.out[i].value, 0);
+		}
+		
+		//Test that using the "feedForward" and "openFileInput" functions in FSONNetwork results in the same values as doing it manually
+		FSONNetwork test3 = new FSONNetwork();
+		FSONNetwork.openFileInput(test3.layers, "print.jpg");
+		FSONNetwork.feedForward(test3.layers, test3.out);
+		Layer.softmax(test3.out);
+		for (int i = 0; i < out.length; i++) {
+			assertEquals(out[i].value, test3.out[i].value, 0);
 		}
 	}
 

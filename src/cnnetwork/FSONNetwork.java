@@ -150,14 +150,14 @@ public class FSONNetwork {
 		}
 
 		//Call the appropriate functions to feed the input through the layers
-		this.layers.get(0).convolution(this.layers.get(0).cells, this.layers.get(0).filters, this.layers.get(1).cells, this.layers.get(0).step, this.layers.get(0).pad, this.layers.get(0).biases);
-		this.layers.get(1).pool(this.layers.get(1).cells, this.layers.get(1).filters, this.layers.get(2).cells, this.layers.get(1).step, this.layers.get(1).Fcollumns);
-		this.layers.get(2).convolution(this.layers.get(2).cells, this.layers.get(2).filters, this.layers.get(3).cells, this.layers.get(2).step, this.layers.get(2).pad, this.layers.get(2).biases);
-		this.layers.get(3).pool(this.layers.get(3).cells, this.layers.get(3).filters, this.layers.get(4).cells, this.layers.get(3).step, this.layers.get(3).Fcollumns);
-		this.layers.get(4).convolution(this.layers.get(4).cells, this.layers.get(4).filters, this.layers.get(5).cells, this.layers.get(4).step, this.layers.get(4).pad, this.layers.get(4).biases);
-		this.layers.get(5).local(this.layers.get(5).cells, this.layers.get(5).filters, this.layers.get(6).cells, this.layers.get(5).step, this.layers.get(5).pad, this.layers.get(5).biases);
-		this.layers.get(6).full(this.layers.get(6).cells, this.layers.get(6).filters, this.layers.get(7).cells[0][0], this.layers.get(6).step, this.layers.get(6).pad, this.layers.get(6).biases);
-		this.layers.get(7).full(this.layers.get(7).cells, this.layers.get(7).filters, this.out, this.layers.get(7).step, this.layers.get(7).pad, this.layers.get(7).biases);
+		this.layers.get(0).convolution(this.layers.get(0).cells, this.layers.get(0).filters, this.layers.get(1).cells, this.layers.get(0).step, this.layers.get(0).pad, this.layers.get(0).biases, true);
+		this.layers.get(1).pool(this.layers.get(1).cells, this.layers.get(1).filters, this.layers.get(2).cells, this.layers.get(1).step, this.layers.get(1).Fcollumns, true);
+		this.layers.get(2).convolution(this.layers.get(2).cells, this.layers.get(2).filters, this.layers.get(3).cells, this.layers.get(2).step, this.layers.get(2).pad, this.layers.get(2).biases, true);
+		this.layers.get(3).pool(this.layers.get(3).cells, this.layers.get(3).filters, this.layers.get(4).cells, this.layers.get(3).step, this.layers.get(3).Fcollumns, true);
+		this.layers.get(4).convolution(this.layers.get(4).cells, this.layers.get(4).filters, this.layers.get(5).cells, this.layers.get(4).step, this.layers.get(4).pad, this.layers.get(4).biases, true);
+		this.layers.get(5).local(this.layers.get(5).cells, this.layers.get(5).filters, this.layers.get(6).cells, this.layers.get(5).step, this.layers.get(5).pad, this.layers.get(5).biases, true);
+		this.layers.get(6).full(this.layers.get(6).cells, this.layers.get(6).filters, this.layers.get(7).cells[0][0], this.layers.get(6).step, this.layers.get(6).pad, this.layers.get(6).biases, true);
+		this.layers.get(7).full(this.layers.get(7).cells, this.layers.get(7).filters, this.out, this.layers.get(7).step, this.layers.get(7).pad, this.layers.get(7).biases, true);
 		Layer.softmax(this.out);
 	}
 
@@ -682,7 +682,7 @@ public class FSONNetwork {
 				openFileInputBW(layers, input[s]);
 				
 				//1.b.ii) Feed the input through the rest of the network
-				feedForward(layers, out);
+				feedForward(layers, out, false);
 				Layer.softmax(out);
 				
 				//2. Increment all weights:
@@ -845,12 +845,19 @@ public class FSONNetwork {
 	 *            The layers that make up this network
 	 * @param out
 	 *            The array of cells that store the output of this network.
+	 * @param store
+	 *            An indication if this network should be set up or not. A
+	 *            "true" value here means that connections should be recorded
+	 *            because this is the first pass through the network and the
+	 *            structure needs to be recorded. A false value here means this
+	 *            is network is already set up and does not need to record
+	 *            connections (no connections will be recorded in this call).
 	 * @throws Exception
 	 *             This exception is thrown when a problem occurs while
 	 *             calculating the activation function for a cell. See
 	 *             Layer::activationFunction() for more details.
 	 */
-	public static void feedForward(LinkedList<Layer> layers, Cell[] out) throws Exception {
+	public static void feedForward(LinkedList<Layer> layers, Cell[] out, boolean store) throws Exception {
 
 		for (int i = 0; i < (layers.size() - 1); i++) {
 			Layer currentLayer = layers.get(i);
@@ -859,19 +866,19 @@ public class FSONNetwork {
 			switch (currentLayer.type) {
 			case CONV:
 				currentLayer.convolution(currentLayer.cells, currentLayer.filters, nextLayer.cells, currentLayer.step,
-						currentLayer.pad, currentLayer.biases);
+						currentLayer.pad, currentLayer.biases, store);
 				break;
 			case FULLY:
 				currentLayer.full(currentLayer.cells, currentLayer.filters, nextLayer.cells[0][0], currentLayer.step,
-						currentLayer.pad, currentLayer.biases);
+						currentLayer.pad, currentLayer.biases,store);
 				break;
 			case LOCAL:
 				currentLayer.local(currentLayer.cells, currentLayer.filters, nextLayer.cells, currentLayer.step,
-						currentLayer.pad, currentLayer.biases);
+						currentLayer.pad, currentLayer.biases, store);
 				break;
 			case MAXPOOL:
 				currentLayer.pool(currentLayer.cells, currentLayer.filters, nextLayer.cells, currentLayer.step,
-						currentLayer.Fcollumns);
+						currentLayer.Fcollumns, store);
 				break;
 			default:
 				// TODO:Throw exception/error here
@@ -881,7 +888,7 @@ public class FSONNetwork {
 		}
 
 		Layer lastLayer = layers.getLast();
-		lastLayer.full(lastLayer.cells, lastLayer.filters, out, lastLayer.step, lastLayer.pad, lastLayer.biases);
+		lastLayer.full(lastLayer.cells, lastLayer.filters, out, lastLayer.step, lastLayer.pad, lastLayer.biases, store);
 
 	}
 

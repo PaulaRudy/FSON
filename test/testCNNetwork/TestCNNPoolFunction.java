@@ -131,7 +131,7 @@ public class TestCNNPoolFunction {
 
 	@Test
 	public void test() {
-		testLayer.pool(testLayer.cells, testLayer.filters, testOut, testLayer.step, testLayer.Fcollumns);
+		testLayer.pool(testLayer.cells, testLayer.filters, testOut, testLayer.step, testLayer.Fcollumns, true);
 		
 		//This is an array of values we expect to see in testOut
 		double[][][] temp = new double[3][2][2];

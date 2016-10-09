@@ -247,14 +247,14 @@ public class TestCNNFSONnetwork {
 		}
 
 		//Call the appropriate functions to feed the input through the layers
-		l1.convolution(l1.cells, l1.filters, l2.cells, l1.step, l1.pad, l1.biases);
-		l2.pool(l2.cells, l2.filters, l3.cells, l2.step, l2.Fcollumns);
-		l3.convolution(l3.cells, l3.filters, l4.cells, l3.step, l3.pad, l3.biases);
-		l4.pool(l4.cells, l4.filters, l5.cells, l4.step, l4.Fcollumns);
-		l5.convolution(l5.cells, l5.filters, l6.cells, l5.step, l5.pad, l5.biases);
-		l6.local(l6.cells, l6.filters, l7.cells, l6.step, l6.pad, l6.biases);
-		l7.full(l7.cells, l7.filters, l8.cells[0][0], l7.step, l7.pad, l7.biases);
-		l8.full(l8.cells, l8.filters, out, l8.step, l8.pad, l8.biases);
+		l1.convolution(l1.cells, l1.filters, l2.cells, l1.step, l1.pad, l1.biases, true);
+		l2.pool(l2.cells, l2.filters, l3.cells, l2.step, l2.Fcollumns, true);
+		l3.convolution(l3.cells, l3.filters, l4.cells, l3.step, l3.pad, l3.biases, true);
+		l4.pool(l4.cells, l4.filters, l5.cells, l4.step, l4.Fcollumns, true);
+		l5.convolution(l5.cells, l5.filters, l6.cells, l5.step, l5.pad, l5.biases, true);
+		l6.local(l6.cells, l6.filters, l7.cells, l6.step, l6.pad, l6.biases, true);
+		l7.full(l7.cells, l7.filters, l8.cells[0][0], l7.step, l7.pad, l7.biases, true);
+		l8.full(l8.cells, l8.filters, out, l8.step, l8.pad, l8.biases, true);
 		Layer.softmax(out);
 	}
 
@@ -271,14 +271,14 @@ public class TestCNNFSONnetwork {
 		//Test that using the "openFileInput" function in FSONNetwork results in the same values as doing it manually
 		FSONNetwork test2 = new FSONNetwork();
 		FSONNetwork.openFileInput(test2.layers, "print.jpg");
-		test2.layers.get(0).convolution(test2.layers.get(0).cells, test2.layers.get(0).filters, test2.layers.get(1).cells, test2.layers.get(0).step, test2.layers.get(0).pad, test2.layers.get(0).biases);
-		test2.layers.get(1).pool(test2.layers.get(1).cells, test2.layers.get(1).filters, test2.layers.get(2).cells, test2.layers.get(1).step, test2.layers.get(1).Fcollumns);
-		test2.layers.get(2).convolution(test2.layers.get(2).cells, test2.layers.get(2).filters, test2.layers.get(3).cells, test2.layers.get(2).step, test2.layers.get(2).pad, test2.layers.get(2).biases);
-		test2.layers.get(3).pool(test2.layers.get(3).cells, test2.layers.get(3).filters, test2.layers.get(4).cells, test2.layers.get(3).step, test2.layers.get(3).Fcollumns);
-		test2.layers.get(4).convolution(test2.layers.get(4).cells, test2.layers.get(4).filters, test2.layers.get(5).cells, test2.layers.get(4).step, test2.layers.get(4).pad, test2.layers.get(4).biases);
-		test2.layers.get(5).local(test2.layers.get(5).cells, test2.layers.get(5).filters, test2.layers.get(6).cells, test2.layers.get(5).step, test2.layers.get(5).pad, test2.layers.get(5).biases);
-		test2.layers.get(6).full(test2.layers.get(6).cells, test2.layers.get(6).filters, test2.layers.get(7).cells[0][0], test2.layers.get(6).step, test2.layers.get(6).pad, test2.layers.get(6).biases);
-		test2.layers.get(7).full(test2.layers.get(7).cells, test2.layers.get(7).filters, test2.out, test2.layers.get(7).step, test2.layers.get(7).pad, test2.layers.get(7).biases);
+		test2.layers.get(0).convolution(test2.layers.get(0).cells, test2.layers.get(0).filters, test2.layers.get(1).cells, test2.layers.get(0).step, test2.layers.get(0).pad, test2.layers.get(0).biases, true);
+		test2.layers.get(1).pool(test2.layers.get(1).cells, test2.layers.get(1).filters, test2.layers.get(2).cells, test2.layers.get(1).step, test2.layers.get(1).Fcollumns, true);
+		test2.layers.get(2).convolution(test2.layers.get(2).cells, test2.layers.get(2).filters, test2.layers.get(3).cells, test2.layers.get(2).step, test2.layers.get(2).pad, test2.layers.get(2).biases, true);
+		test2.layers.get(3).pool(test2.layers.get(3).cells, test2.layers.get(3).filters, test2.layers.get(4).cells, test2.layers.get(3).step, test2.layers.get(3).Fcollumns, true);
+		test2.layers.get(4).convolution(test2.layers.get(4).cells, test2.layers.get(4).filters, test2.layers.get(5).cells, test2.layers.get(4).step, test2.layers.get(4).pad, test2.layers.get(4).biases, true);
+		test2.layers.get(5).local(test2.layers.get(5).cells, test2.layers.get(5).filters, test2.layers.get(6).cells, test2.layers.get(5).step, test2.layers.get(5).pad, test2.layers.get(5).biases, true);
+		test2.layers.get(6).full(test2.layers.get(6).cells, test2.layers.get(6).filters, test2.layers.get(7).cells[0][0], test2.layers.get(6).step, test2.layers.get(6).pad, test2.layers.get(6).biases, true);
+		test2.layers.get(7).full(test2.layers.get(7).cells, test2.layers.get(7).filters, test2.out, test2.layers.get(7).step, test2.layers.get(7).pad, test2.layers.get(7).biases, true);
 		Layer.softmax(test2.out);
 		for (int i = 0; i < out.length; i++) {
 			assertEquals(out[i].value, test2.out[i].value, 0);
@@ -287,7 +287,7 @@ public class TestCNNFSONnetwork {
 		//Test that using the "feedForward" and "openFileInput" functions in FSONNetwork results in the same values as doing it manually
 		FSONNetwork test3 = new FSONNetwork();
 		FSONNetwork.openFileInput(test3.layers, "print.jpg");
-		FSONNetwork.feedForward(test3.layers, test3.out);
+		FSONNetwork.feedForward(test3.layers, test3.out, true);
 		Layer.softmax(test3.out);
 		for (int i = 0; i < out.length; i++) {
 			assertEquals(out[i].value, test3.out[i].value, 0);

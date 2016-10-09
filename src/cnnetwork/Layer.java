@@ -198,12 +198,19 @@ public class Layer {
 	 * @param biases
 	 *            the list of biases to be applied to the input layer, in the
 	 *            same order as the list of filters.
+	 * @param store
+	 *            An indication if this network should be set up or not. A
+	 *            "true" value here means that connections should be recorded
+	 *            because this is the first pass through the network and the
+	 *            structure needs to be recorded. A false value here means this
+	 *            is network is already set up and does not need to record
+	 *            connections (no connections will be recorded in this call).
 	 * @throws Exception
 	 *             Thrown when the activation function does not return a number
 	 *             (see activationFunction()).
 	 */
 	public void convolution(Cell[][][] input, LinkedList<Filter> filters, Cell[][][] output, int step,
-			int padding, LinkedList<Cell> biases) throws Exception {
+			int padding, LinkedList<Cell> biases, boolean store) throws Exception {
 
 		// For every filter and bias in the list
 		for (int l = 0; l < filters.size(); l++) {
@@ -220,8 +227,11 @@ public class Layer {
 					
 					output[l][(j / step)][(k / step)].value = compute(filters.get(l), input, k, j, 0, biases.get(l));
 
-					//Record this connection. This information will be used during backpropagation.
-					filters.get(l).connections.add(new FilterConnection(l, new CellCoord(0, j, k), new CellCoord(l, (j / step), (k / step))));
+					//If this is a new network...
+					if (store){
+						//Record this connection. This information will be used during backpropagation.
+						filters.get(l).connections.add(new FilterConnection(l, new CellCoord(0, j, k), new CellCoord(l, (j / step), (k / step))));
+					}
 				}
 			}
 
@@ -240,11 +250,18 @@ public class Layer {
 	 * @param step
 	 *            the "step" of the input layer- the number of columns and rows
 	 *            between the sections of input used.
+	 * @param store
+	 *            An indication if this network should be set up or not. A
+	 *            "true" value here means that connections should be recorded
+	 *            because this is the first pass through the network and the
+	 *            structure needs to be recorded. A false value here means this
+	 *            is network is already set up and does not need to record
+	 *            connections (no connections will be recorded in this call).
 	 * @param f
 	 *            the size (f = width = height) of the section of input used in
 	 *            the pooling operation.
 	 */
-	public void pool(Cell[][][] input, LinkedList<Filter> filters, Cell[][][] output, int step, int f) {
+	public void pool(Cell[][][] input, LinkedList<Filter> filters, Cell[][][] output, int step, int f, boolean store) {
 
 		int filterNum = 0;//This is used to iterate over the list of filters (necessary for backpropagation)
 		
@@ -261,8 +278,12 @@ public class Layer {
 				for (int k = 0; (k + f) <= input[0][0].length; k += step) {
 					output[l][(j / step)][(k / step)].value = computeMax(input, k, j, l, f);
 					
-					//Record this connection. This information will be used during backpropagation.
-					filters.get(filterNum).connections.add(new FilterConnection(filterNum, new CellCoord(l, j, k), new CellCoord(l, (j / step), (k / step))));
+					// If this is a new network...
+					if (store) {
+						// Record this connection. This information will be used during backpropagation.
+						filters.get(filterNum).connections.add(new FilterConnection(filterNum, new CellCoord(l, j, k),
+								new CellCoord(l, (j / step), (k / step))));
+					}
 					
 					filterNum++;//Make sure to increment this so that you use the next filter each time.
 
@@ -296,12 +317,19 @@ public class Layer {
 	 * @param biases
 	 *            the list of biases to be applied to the input layer, in the
 	 *            same order as the list of filters.
+	 * @param store
+	 *            An indication if this network should be set up or not. A
+	 *            "true" value here means that connections should be recorded
+	 *            because this is the first pass through the network and the
+	 *            structure needs to be recorded. A false value here means this
+	 *            is network is already set up and does not need to record
+	 *            connections (no connections will be recorded in this call).
 	 * @throws Exception
 	 *             Thrown when the activation function does not return a number
 	 *             (see activationFunction()).
 	 */
 	public void local(Cell[][][] input, LinkedList<Filter> filters, Cell[][][] output, int step, int padding,
-			LinkedList<Cell> biases) throws Exception {
+			LinkedList<Cell> biases, boolean store) throws Exception {
 
 		int filterNum = 0;//This is used to iterate over the list of filters ("filters") and biases ("biases").
 		
@@ -317,8 +345,12 @@ public class Layer {
 					output[l][(j / step)][(k / step)].value = compute(filters.get(filterNum), input, k, j, l,
 							biases.get(filterNum));
 					
-					//Record this connection. This information will be used during backpropagation.
-					filters.get(filterNum).connections.add(new FilterConnection(filterNum, new CellCoord(l, j, k), new CellCoord(l, (j / step), (k / step))));
+					// If this is a new network...
+					if (store) {
+						//Record this connection. This information will be used during backpropagation.
+						filters.get(filterNum).connections.add(new FilterConnection(filterNum, new CellCoord(l, j, k),
+								new CellCoord(l, (j / step), (k / step))));
+					}
 					
 					filterNum++;//Make sure to increment this so that you use the next filter and bias each time.
 				}
@@ -350,12 +382,19 @@ public class Layer {
 	 * @param biases
 	 *            the list of biases to be applied to the input layer, in the
 	 *            same order as the list of filters.
+	 * @param store
+	 *            An indication if this network should be set up or not. A
+	 *            "true" value here means that connections should be recorded
+	 *            because this is the first pass through the network and the
+	 *            structure needs to be recorded. A false value here means this
+	 *            is network is already set up and does not need to record
+	 *            connections (no connections will be recorded in this call).
 	 * @throws Exception
 	 *             Thrown when the activation function does not return a number
 	 *             (see activationFunction()).
 	 */
 	public void full(Cell[][][] input, LinkedList<Filter> filters, Cell[] output, int step, int padding,
-			LinkedList<Cell> biases) throws Exception {
+			LinkedList<Cell> biases, boolean store) throws Exception {
 		//Apply each filter to the input.
 		//Because this is a fully connected layer, each filter is applied to the entire input array,
 		// so we do not need to iterate over the input (the "compute" function will iterate through 
@@ -363,8 +402,11 @@ public class Layer {
 		for (int f = 0; f < filters.size(); f++) {
 			output[f].value = compute(filters.get(f), input, 0, 0, 0, biases.get(f));
 			
-			//Record this connection. This information will be used during backpropagation.
-			filters.get(f).connections.add(new FilterConnection(f, new CellCoord(0, 0, 0), new CellCoord(0, 0, f)));
+			//If this is a new network...
+			if (store){
+				//Record this connection. This information will be used during backpropagation.
+				filters.get(f).connections.add(new FilterConnection(f, new CellCoord(0, 0, 0), new CellCoord(0, 0, f)));
+			}
 		}
 	}
 	

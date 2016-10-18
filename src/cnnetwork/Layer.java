@@ -17,7 +17,7 @@ import javacalculus.struct.CalcSymbol;
  *
  */
 public class Layer {
-	
+
 	public final int collumns;// The width of the layer
 	public final int rows;// The height of the layer
 	public final int depth;// the depth of the layer
@@ -47,7 +47,7 @@ public class Layer {
 		this.filters = new LinkedList<Filter>();
 		this.type = type;
 		this.cells = new Cell[depth][rows][collumns];
-		
+
 		// Initialize the cells because java won't do it for you
 		// Depth
 		for (int l = 0; l < depth; l++) {
@@ -60,10 +60,10 @@ public class Layer {
 			}
 		}
 	}
-	
+
 	/**
 	 * This function is used to initialize all the filters and biases for this
-	 * layer. All values are initialized to 1.
+	 * layer. All filter weights are initialized to 0.5, and all biases to 0.
 	 */
 	public void initLayer() {
 		// Create and initialize the filters
@@ -73,23 +73,17 @@ public class Layer {
 			for (int x = 0; x < this.Fdepth; x++) {
 				for (int y = 0; y < this.Frows; y++) {
 					for (int z = 0; z < this.Fcollumns; z++) {
-						newFilterWeights[x][y][z] = 0.5; 
+						newFilterWeights[x][y][z] = 0.5;
 					}
 				}
 			}
 
-			Filter newFilter = new Filter(newFilterWeights);// Use the default
-															// constructor with
-															// the newly created
-															// filter weights
-			this.filters.add(newFilter);// Actually add the filter to the list of
-										// filters in the layer
-			Cell newBias = new Cell(1);// Create the bias for this filter
-			this.biases.add(newBias);// Add the bias to the list of biases in the
-									// layer.
+			Filter newFilter = new Filter(newFilterWeights);// Use the default constructor with the newly created filter weights
+			this.filters.add(newFilter);// Actually add the filter to the list of filters in the layer
+			Cell newBias = new Cell(0.0);// Create the bias for this filter
+			this.biases.add(newBias);// Add the bias to the list of biases in the layer.
 		}
 	}
-	
 
 	/**
 	 * This function computes a single output value, given:
@@ -110,16 +104,25 @@ public class Layer {
 	 *            filter to
 	 * @param bias
 	 *            the bias to be used in this computation.
+	 * @param lastLayer
+	 *            A boolean indicating if this computation's result will be used
+	 *            for the last layer or not. A "true" value here indicates that
+	 *            this computation's result will be used to calculate the values
+	 *            of the "out" layer, and so should not use the activation
+	 *            function.
 	 * @return the newly computed value to be stored into the next layer.
 	 * @throws Exception
 	 *             Thrown when the activation function does not return a number
 	 *             (see activationFunction()).
 	 */
-	public static double compute(Filter filter, Cell[][][] input, int column, int row, int depth, Cell bias) throws Exception {
+	public static double compute(Filter filter, Cell[][][] input, int column, int row, int depth, Cell bias,
+			boolean lastLayer) throws Exception {
 		double result = 0.0;
 
-		//For every cell in the input array, using depth, row, and column as the starting point,
-		//multiply that value by the corresponding entry in the filter, and add it to the result
+		// For every cell in the input array, using depth, row, and column as
+		// the starting point,
+		// multiply that value by the corresponding entry in the filter,
+		// and add it to the result
 		for (int i = 0; i < filter.weights.length; i++) {
 			for (int j = 0; j < filter.weights[0].length; j++) {
 				for (int k = 0; k < filter.weights[0][0].length; k++) {
@@ -128,10 +131,16 @@ public class Layer {
 			}
 
 		}
-		result += bias.value;//Add the bias
-		
-		//Use the activation function to determine actual value (limited between 0 and 1).
-		result = activationFunction(result);
+		result += bias.value;// Add the bias
+
+		// If the result of this computation isn't going to be stored in the
+		// output of this network (if the input array is not from the last layer
+		// before "out")...
+		if (!lastLayer) {
+			// Use the activation function to determine actual value (limited between 0 and 1).
+			result = activationFunction(result);
+		}
+
 		return result;
 	}
 
@@ -154,18 +163,19 @@ public class Layer {
 	 * @param F
 	 *            dimension (F x F (@ the depth)) of section of input to find
 	 *            max in
-	 * @return
-	 * 			  The found maximum of that area
+	 * @return The found maximum of that area
 	 */
 	public double computeMax(Cell[][][] input, int collumn, int row, int depth, int F) {
 
-		//Start with 0. Since every value is between 0 and 1,
-		//this is guaranteed to be <= to every cell value. 
+		// Start with 0. Since every value is between 0 and 1,
+		// this is guaranteed to be <= to every cell value.
 		double result = 0.0;
 
-		//For every cell at this depth ("depth"), find the max value.
-		//Make sure not to go off the edge of the filter "(j < F)",
-		//or the input "((row + j) < input[0].length)".
+		// For every cell at this depth ("depth"), find the max value.
+		// Make sure not to go off the edge of the filter:
+		//		 "(j < F)"
+		// or the input:
+		//		 "((row + j) < input[0].length)"
 		for (int j = 0; ((j < F) && ((row + j) < input[0].length)); j++) {
 			for (int k = 0; ((k < F) && ((collumn + k) < input[0][0].length)); k++) {
 				if (result < input[depth][(row + j)][(collumn + k)].value) {
@@ -209,28 +219,30 @@ public class Layer {
 	 *             Thrown when the activation function does not return a number
 	 *             (see activationFunction()).
 	 */
-	public void convolution(Cell[][][] input, LinkedList<Filter> filters, Cell[][][] output, int step,
-			int padding, LinkedList<Cell> biases, boolean store) throws Exception {
+	public void convolution(Cell[][][] input, LinkedList<Filter> filters, Cell[][][] output, int step, int padding,
+			LinkedList<Cell> biases, boolean store) throws Exception {
 
 		// For every filter and bias in the list
 		for (int l = 0; l < filters.size(); l++) {
 
-			//Iterate through the filters and input, calling "compute" to
-			//apply each filter at the correct location in turn.
-			//We are only working at a depth of 0 because the "compute" function 
-			//will iterate through the full depth of the filters).
+			// Iterate through the filters and input, calling "compute" to
+			// apply each filter at the correct location in turn.
+			// We are only working at a depth of 0 because the "compute"
+			// function will iterate through the full depth of the filters).
 
 			// Row
 			for (int j = 0; (j + filters.get(0).weights[0].length) <= input[0].length; j += step) {
 				// Column
 				for (int k = 0; (k + filters.get(0).weights[0][0].length) <= input[0][0].length; k += step) {
-					
-					output[l][(j / step)][(k / step)].value = compute(filters.get(l), input, k, j, 0, biases.get(l));
 
-					//If this is a new network...
-					if (store){
-						//Record this connection. This information will be used during backpropagation.
-						filters.get(l).connections.add(new FilterConnection(l, new CellCoord(0, j, k), new CellCoord(l, (j / step), (k / step))));
+					output[l][(j / step)][(k / step)].value = compute(filters.get(l), input, k, j, 0, biases.get(l),
+							false);
+
+					// If this is a new network...
+					if (store) {
+						// Record this connection. This information will be used during backpropagation.
+						filters.get(l).connections.add(new FilterConnection(l, new CellCoord(0, j, k),
+								new CellCoord(l, (j / step), (k / step))));
 					}
 				}
 			}
@@ -263,13 +275,14 @@ public class Layer {
 	 */
 	public void pool(Cell[][][] input, LinkedList<Filter> filters, Cell[][][] output, int step, int f, boolean store) {
 
-		int filterNum = 0;//This is used to iterate over the list of filters (necessary for backpropagation)
-		
-		//Iterate over the input, calling "computeMax" to pool at each location.
-		//Make sure not to go off the edge of the input "((j + f) < input[0].length)".
-		//(This check is not needed for depth because "computeMax" only operates on a
-		//single depth slice).
-		
+		int filterNum = 0;// This is used to iterate over the list of filters necessary for backpropagation)
+
+		// Iterate over the input, calling "computeMax" to pool at each location.
+		// Make sure not to go off the edge of the input 
+		// "((j + f) < input[0].length)".
+		// (This check is not needed for depth because "computeMax" only
+		// operates on a single depth slice).
+
 		// Depth
 		for (int l = 0; l < input.length; l++) {
 			// Row
@@ -277,15 +290,15 @@ public class Layer {
 				// Column
 				for (int k = 0; (k + f) <= input[0][0].length; k += step) {
 					output[l][(j / step)][(k / step)].value = computeMax(input, k, j, l, f);
-					
+
 					// If this is a new network...
 					if (store) {
 						// Record this connection. This information will be used during backpropagation.
 						filters.get(filterNum).connections.add(new FilterConnection(filterNum, new CellCoord(l, j, k),
 								new CellCoord(l, (j / step), (k / step))));
 					}
-					
-					filterNum++;//Make sure to increment this so that you use the next filter each time.
+
+					filterNum++;// Make sure to increment this so that you use the next filter each time.
 
 				}
 
@@ -331,11 +344,12 @@ public class Layer {
 	public void local(Cell[][][] input, LinkedList<Filter> filters, Cell[][][] output, int step, int padding,
 			LinkedList<Cell> biases, boolean store) throws Exception {
 
-		int filterNum = 0;//This is used to iterate over the list of filters ("filters") and biases ("biases").
-		
-		//Iterate over the input, calling "compute" to calculate the result at each location.
-		//Make sure not to go off the edge of the input ("(l + filters.get(0).length) <= input.length").
-		
+		int filterNum = 0;// This is used to iterate over the list of filters ("filters") and biases ("biases").
+
+		// Iterate over the input, calling "compute" to calculate the result at each location.
+		// Make sure not to go off the edge of the input: 
+		// "(l + filters.get(0).length) <= input.length"
+
 		// Depth
 		for (int l = 0; (l + filters.get(0).weights.length) <= input.length; l++) {
 			// Row
@@ -343,16 +357,16 @@ public class Layer {
 				// Column
 				for (int k = 0; (k + filters.get(0).weights[0][0].length) <= input[0][0].length; k += step) {
 					output[l][(j / step)][(k / step)].value = compute(filters.get(filterNum), input, k, j, l,
-							biases.get(filterNum));
-					
+							biases.get(filterNum), false);
+
 					// If this is a new network...
 					if (store) {
-						//Record this connection. This information will be used during backpropagation.
+						// Record this connection. This information will be used during backpropagation.
 						filters.get(filterNum).connections.add(new FilterConnection(filterNum, new CellCoord(l, j, k),
 								new CellCoord(l, (j / step), (k / step))));
 					}
-					
-					filterNum++;//Make sure to increment this so that you use the next filter and bias each time.
+
+					filterNum++;// Make sure to increment this so that you use the next filter and bias each time.
 				}
 
 			}
@@ -389,30 +403,36 @@ public class Layer {
 	 *            structure needs to be recorded. A false value here means this
 	 *            is network is already set up and does not need to record
 	 *            connections (no connections will be recorded in this call).
+	 * @param lastLayer
+	 *            A boolean indicating if this computation's result will be used
+	 *            for the last layer or not. A "true" value here indicates that
+	 *            this computation's result will be used to calculate the values
+	 *            of the "out" layer, and so the activation function should not
+	 *            be used.
 	 * @throws Exception
 	 *             Thrown when the activation function does not return a number
 	 *             (see activationFunction()).
 	 */
 	public void full(Cell[][][] input, LinkedList<Filter> filters, Cell[] output, int step, int padding,
-			LinkedList<Cell> biases, boolean store) throws Exception {
-		//Apply each filter to the input.
-		//Because this is a fully connected layer, each filter is applied to the entire input array,
-		// so we do not need to iterate over the input (the "compute" function will iterate through 
-		// the full depth of the filter).
+			LinkedList<Cell> biases, boolean store, boolean lastLayer) throws Exception {
+		// Apply each filter to the input.
+		// Because this is a fully connected layer, each filter is applied to the entire input array,
+		// so we do not need to iterate over the input 
+		// (the "compute" function will iterate through the full depth of the filter).
 		for (int f = 0; f < filters.size(); f++) {
-			output[f].value = compute(filters.get(f), input, 0, 0, 0, biases.get(f));
-			
-			//If this is a new network...
-			if (store){
-				//Record this connection. This information will be used during backpropagation.
+			output[f].value = compute(filters.get(f), input, 0, 0, 0, biases.get(f), lastLayer);
+
+			// If this is a new network...
+			if (store) {
+				// Record this connection. This information will be used during backpropagation.
 				filters.get(f).connections.add(new FilterConnection(f, new CellCoord(0, 0, 0), new CellCoord(0, 0, f)));
 			}
 		}
 	}
-	
+
 	/**
 	 * This function is used to ensure that the value for each cell is kept
-	 * between 0 and 1
+	 * between 0 and 1. It is a "sigmoid" function.
 	 * 
 	 * @param x
 	 *            The original value of the cell as a double
@@ -436,8 +456,7 @@ public class Layer {
 		// Evaluate the function using the passed in value of x
 		resultObject = CALC.SYM_EVAL(resultObject);
 
-		// Return either the numerical result or throw an exception to indicate
-		// it cannot be calculated
+		// Return either the numerical result or throw an exception to indicate it cannot be calculated
 		double result;
 		if (resultObject.isNumber()) {
 			result = Double.parseDouble(resultObject.toString());
@@ -447,7 +466,7 @@ public class Layer {
 
 		return result;
 	}
-	
+
 	/**
 	 * This function is a helper function to softmax() to calculate the value of
 	 * a single cell in a k way softmax.
@@ -462,34 +481,35 @@ public class Layer {
 	 *             Thrown when the activation function does not return a number
 	 */
 	public static double softmaxActivationFunction(double x, double sumENet) throws Exception {
-		double result = Math.exp(x)/sumENet;
+		double result = Math.exp(x) / sumENet;
 		return result;
 	}
-	
+
 	/**
 	 * This is a helper function, used to calculate the sum of e to the power of
 	 * the value of each of the values in the input. This value is used in
 	 * softmaxActivationFunction as a parameter.
 	 * 
 	 * @param input
-	 *            The cells containing the input values upon which to calculate the sum.
+	 *            The cells containing the input values upon which to calculate
+	 *            the sum.
 	 * 
 	 * @return The sum e raised to each original value of all the values of the
 	 *         input. IE sum(e^xi).
 	 */
 	public static double sumE(Cell[] input) {
-		
-		//Start with 0. This will hold the sum.
+
+		// Start with 0. This will hold the sum.
 		double total = 0;
-		
-		// Iterate over all the cells. 
+
+		// Iterate over all the cells.
 		for (int i = 0; i < input.length; i++) {
 			total += Math.exp(input[i].value);
 		}
-		
+
 		return total;
 	}
-	
+
 	/**
 	 * This function is used to calculate a k way softmax- an array of values
 	 * where all the values sum to 1. This is used in the final step in a k-way
@@ -498,25 +518,24 @@ public class Layer {
 	 * 
 	 * @param input
 	 *            The input layer's cells upon which to calculate the softmax.
-	 * @return A one dimensional array of Cells, the same length as the depth
-	 *         of the input array, that sum to 1.
+	 * @return A one dimensional array of Cells, the same length as the depth of
+	 *         the input array, that sum to 1.
 	 * @throws Exception
 	 *             Thrown when the activation function does not return a number
 	 */
 	public static void softmax(Cell[] input) throws Exception {
 
 		double sum = sumE(input);
-		
-		// Iterate over all the cells. Because this is a softmax "layer", it will
-		// be one dimensional
+
+		// Iterate over all the cells. Because this is a softmax "layer", it will be one dimensional
 		for (int i = 0; i < input.length; i++) {
 			input[i].value = softmaxActivationFunction(input[i].value, sum);
-			//Because this function is only used for processing BEFORE backpropagation, we don't need to worry about any stored derivatives being preserved.
+			// Because this function is only used for processing BEFORE
+			// backpropagation, we don't need to worry about any stored
+			// derivatives being preserved.
 			input[i].derivative = -1;
 		}
 
 	}
-	
-
 
 }

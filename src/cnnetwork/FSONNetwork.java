@@ -279,7 +279,7 @@ public class FSONNetwork {
 
 					// If this is the last layer (IE the layer before "out"):
 					if ((layerIndex + 1) == layers.size()) {
-						sum += (dnetdw * computeSoftmaxError(out, thisConnection.out.depth, expected));
+						sum += (dnetdw * computeSoftmaxError(out, filterIndex, expected));
 					} else {
 
 						// Find the net value of the output cell:
@@ -394,7 +394,7 @@ public class FSONNetwork {
 								// that means that 1 is the derivative of the net of this output cell 
 								// with respect to this bias(IE dnet/dbias).
 								// So we can ignore dnet/dbias in our calculations.
-								sum += computeSoftmaxError(out, currentConnection.out.depth, expected);
+								sum += computeSoftmaxError(out, i, expected);
 
 							} else {
 
@@ -482,30 +482,52 @@ public class FSONNetwork {
 		// with respect to the given expected values in double[] expected.
 		double dEdnet = 0;
 
-		// For all FilterConnections that use this cell for input...
+		// Find all FilterConnections that use this cell for input:
+		
+		//For all filters in this layer...
 		for (int i = 0; i < layers.get(layerIndex).K; i++) {
-			LinkedList<FilterConnection> relevantConnections = layers.get(layerIndex).filters.get(i).connections;
-			for (int j = 0; j < relevantConnections.size(); j++) {
+			// Grab all the connections for this filter
+			LinkedList<FilterConnection> currentFilterConnections = layers.get(layerIndex).filters.get(i).connections;
+			for (int j = 0; j < currentFilterConnections.size(); j++) {
 				// TODO: Account for -1s?
 				// If this filter is applied to the cell we are looking at...
-				if ((relevantConnections.get(j).inStart.depth <= outcell.depth)
-						&& (relevantConnections.get(j).inStart.row <= outcell.row)
-						&& (relevantConnections.get(j).inStart.column <= outcell.column)
-						&& ((relevantConnections.get(j).inStart.depth + layers.get(layerIndex).Fdepth) >= outcell.depth)
-						&& ((relevantConnections.get(j).inStart.row + layers.get(layerIndex).Frows) >= outcell.row)
-						&& ((relevantConnections.get(j).inStart.column
+				if ((currentFilterConnections.get(j).inStart.depth <= outcell.depth)
+						&& (currentFilterConnections.get(j).inStart.row <= outcell.row)
+						&& (currentFilterConnections.get(j).inStart.column <= outcell.column)
+						&& ((currentFilterConnections.get(j).inStart.depth + layers.get(layerIndex).Fdepth) >= outcell.depth)
+						&& ((currentFilterConnections.get(j).inStart.row + layers.get(layerIndex).Frows) >= outcell.row)
+						&& ((currentFilterConnections.get(j).inStart.column
 								+ layers.get(layerIndex).Fcollumns) >= outcell.column)) {
 
-					// Grab the depth, row, and column in the filter of the weight multiplied by this cell
-					// when this connection is calculated
-					int depth = (outcell.depth - relevantConnections.get(j).inStart.depth);
-					int row = (outcell.row - relevantConnections.get(j).inStart.row);
-					int column = (outcell.column - relevantConnections.get(j).inStart.column);
-
-					// Find the derivative of the total error with respect to that weight
-					// (using computePartialDerivative(LinkedList<Layer> layers, Cell[] out, int layerIndex, int filterIndex, int depth, int row, int column, double[] expected),
-					// and add the result to our sum variable.
-					dEdnet += computePartialDerivative(layers, out, layerIndex, i, depth, row, column, expected);
+					// Find the derivative of the total error with respect to the output cell for this connection
+					
+					// If this is the last layer before out...
+					if (layerIndex == (layers.size() -1)){
+						
+						// Grab the depth, row, and column in the filter of the weight multiplied by this cell
+						// when this connection is calculated
+						int depth = (outcell.depth - currentFilterConnections.get(j).inStart.depth);
+						int row = (outcell.row - currentFilterConnections.get(j).inStart.row);
+						int column = (outcell.column - currentFilterConnections.get(j).inStart.column);
+						
+						// Get the value of the weight multiplied by this cell
+						// when this connection is calculated.
+						// This gives us the partial derivative of the net of 
+						// the next connection with respect to the current cell 
+						// (IE our input paramater "outcell")
+						double dnetdw = layers.get(layerIndex).filters.get(i).weights[depth][row][column];
+						
+						dEdnet += (dnetdw * computeSoftmaxError(out, i, expected));
+						
+					} else {
+					
+						// Recursively calculate the derivative of the total
+						// error with respect to the output cell for this
+						// connection and add it to our sum variable
+						dEdnet += computePartialDerivative(layers, out, layerIndex+1, currentFilterConnections.get(j).out, expected);
+					}
+					
+					
 				}
 			}
 		}

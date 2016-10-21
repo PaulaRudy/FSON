@@ -31,6 +31,10 @@ public class TestCNNComputePartialDerivative {
 		// Create and initialize the first layer
 		Layer l1 = new Layer(3, 3, 1, 2, 2, 1, 1, 1, 0, LayerType.CONV);
 		l1.initLayer();
+		
+		// Since we're going to leave all the cells in this layer at 0.0,
+		// making the bias 1 will make the calculations more interesting.
+		l1.biases.get(0).value = 1.0;
 
 		// Add the first layer to the list
 		layers.add(0, l1);
@@ -75,13 +79,18 @@ public class TestCNNComputePartialDerivative {
 		// first filter of the last layer
 		// (IE Layer 2, Filter 1, coordinates [0][0][0]).
 		double testResultWeight5 = FSONNetwork.computePartialDerivative(layers, out, 1, 0, 0, 0, 0, expect);
-		assertEquals(0.01763939922793867, testResultWeight5, 0.000000001);
+		assertEquals(0.2436862, testResultWeight5, 0.000000001);
 
 		// Test the calculated partial derivative of the first weight of the
 		// first filter of the first layer
 		// (IE Layer 1, Filter 1, coordinates [0][0][0]).
 		double testResultWeight1 = FSONNetwork.computePartialDerivative(layers, out, 0, 0, 0, 0, 0, expect);
 		assertEquals(0.0, testResultWeight1, 0.000000001);
+		
+		// Test the calculated partial derivative of the bias of the first layer.
+		// (IE layer 1, bias 1)
+		double testResultBias1 = FSONNetwork.computePartialDerivative(layers, out, 0, 0, expect);
+		assertEquals(0.0, testResultBias1, 0.000000001);
 
 	}
 

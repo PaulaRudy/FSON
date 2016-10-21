@@ -1,5 +1,7 @@
 package testCNNetwork;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.LinkedList;
 
 import org.junit.Before;
@@ -10,7 +12,7 @@ import cnnetwork.FSONNetwork;
 import cnnetwork.Layer;
 import cnnetwork.LayerType;
 
-public class TestCNNFSONNetworkLearnFunctionSimple {
+public class TestCNNFSONNetworkLearnSimple {
 	LinkedList<Layer> layers;
 	Cell[] out;
 	double[] expect;
@@ -22,7 +24,7 @@ public class TestCNNFSONNetworkLearnFunctionSimple {
 		layers = new LinkedList<Layer>();
 
 		// Create and initialize the second layer
-		Layer l1 = new Layer(1, 1, 1, 1, 1, 1, 1, 1, 0, LayerType.FULLY);
+		Layer l1 = new Layer(2, 2, 1, 2, 2, 1, 1, 1, 0, LayerType.FULLY);
 		l1.initLayer();
 
 		// Add the second layer to the list
@@ -34,7 +36,7 @@ public class TestCNNFSONNetworkLearnFunctionSimple {
 		out[0] = new Cell();
 
 		// Open file for input
-		FSONNetwork.openFileInputBW(layers, "1a.jpg");
+		FSONNetwork.openFileInputBW(layers, "1b.jpg");
 		
 		// Feed the input through the layers of the network.
 		// This sets up the connections needed for backpropagation
@@ -47,17 +49,33 @@ public class TestCNNFSONNetworkLearnFunctionSimple {
 
 		// Set up the input array (an array of the filenames of the input files,
 		// located in the root directory of the project).
-		String[] input = new String[2];
-		input[0] = "1a.jpg";
-		input[1] = "2a.jpg";
+		String[] input = new String[10];
+		input[0] = "1b.jpg";
+		input[1] = "2b.jpg";
+		input[2] = "3b.jpg";
+		input[3] = "4b.jpg";
+		input[4] = "5b.jpg";
+		input[5] = "6b.jpg";
+		input[6] = "7b.jpg";
+		input[7] = "8b.jpg";
+		input[8] = "9b.jpg";
+		input[9] = "10b.jpg";
 
 		// Set up the "dictionary". This is an array of the expected outputs
 		// for each input.
 		double[][] dictionary = new double[input.length][out.length];
 		dictionary[0][0] = 1;
-		dictionary[1][0] = 0;
-
-		FSONNetwork.learn(1, layers, out, input, 100, dictionary, true);
+		dictionary[1][0] = 1;
+		dictionary[2][0] = 1;
+		dictionary[3][0] = 1;
+		dictionary[4][0] = 0;
+		dictionary[5][0] = 0;
+		dictionary[6][0] = 0;
+		dictionary[7][0] = 0;
+		dictionary[8][0] = 0;
+		dictionary[9][0] = 0;
+		
+		FSONNetwork.learn(1, layers, out, input, 500, dictionary, true);
 
 	}
 
@@ -68,7 +86,7 @@ public class TestCNNFSONNetworkLearnFunctionSimple {
 	public void test() throws Exception {
 
 		// Open file for input
-		FSONNetwork.openFileInputBW(layers, "1a.jpg");
+		FSONNetwork.openFileInputBW(layers, "1b.jpg");
 		// Feed the input through the layers of the network.
 		FSONNetwork.feedForward(layers, out, false);
 		// Since network has a single output value, it is independent and needs
@@ -76,6 +94,18 @@ public class TestCNNFSONNetworkLearnFunctionSimple {
 		// (since the softmax would always result in a value of 1.0).
 		out[0].value = Layer.activationFunction(out[0].value);
 
+		assertEquals( 1.0, out[0].value, 0.2);
+		
+		// Open file for input
+		FSONNetwork.openFileInputBW(layers, "7b.jpg");
+		// Feed the input through the layers of the network.
+		FSONNetwork.feedForward(layers, out, false);
+		// Since network has a single output value, it is independent and needs
+		// to use the regular sigmoid activation function instead of the softmax
+		// (since the softmax would always result in a value of 1.0).
+		out[0].value = Layer.activationFunction(out[0].value);
+
+		assertEquals( 0, out[0].value, 0.2);
 	}
 
 }

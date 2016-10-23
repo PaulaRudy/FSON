@@ -101,72 +101,6 @@ public class FSONNetwork {
 	}
 
 	/**
-	 * This function feeds a buffered image through the sample network.
-	 * 
-	 * @param image
-	 *            The image to use as input
-	 * @throws Exception
-	 *             Thrown when the activation function does not return a number
-	 *             (see Layer::activationFunction()).
-	 */
-	public void sampleCalculate(BufferedImage image) throws Exception {
-
-		// This is necessary to use any of the OpenCV functions
-		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-
-		// First, convert the image to an OpenCV Mat.
-		// This function can be found in image.Align.java
-		Mat test = Align.bufferedImageToMat(image);
-
-		// Next, resize the image to the size needed.
-		Mat resizedImage = new Mat();
-		Size sz = new Size(76, 76);
-		Imgproc.resize(test, resizedImage, sz);
-
-		// Split the image into three color channels
-		List<Mat> channels = new ArrayList<Mat>(3);// Channels are stored here in the order RGB
-		Core.split(resizedImage, channels);
-
-		// For each channel...
-		for (int i = 0; i < channels.size(); i++) {
-
-			// Feed the individual pixel values into a temporary array...
-			channels.get(i).convertTo(channels.get(i), CvType.CV_64FC3);
-			int size = (int) (channels.get(i).total() * channels.get(i).channels());
-			double[] temp = new double[size];
-			channels.get(i).get(0, 0, temp);
-
-			// ...and then into the cells of the first layer of the network.
-			for (int j = 0; j < 76; j++) {
-				for (int k = 0; k < 76; k++) {
-					this.layers.get(0).cells[i][j][k].value = temp[(j * 76) + k];
-				}
-
-			}
-
-		}
-
-		// Call the appropriate functions to feed the input through the layers
-		this.layers.get(0).convolution(this.layers.get(0).cells, this.layers.get(0).filters, this.layers.get(1).cells,
-				this.layers.get(0).step, this.layers.get(0).pad, this.layers.get(0).biases, false);
-		this.layers.get(1).pool(this.layers.get(1).cells, this.layers.get(1).filters, this.layers.get(2).cells,
-				this.layers.get(1).step, this.layers.get(1).Fcollumns, false);
-		this.layers.get(2).convolution(this.layers.get(2).cells, this.layers.get(2).filters, this.layers.get(3).cells,
-				this.layers.get(2).step, this.layers.get(2).pad, this.layers.get(2).biases, false);
-		this.layers.get(3).pool(this.layers.get(3).cells, this.layers.get(3).filters, this.layers.get(4).cells,
-				this.layers.get(3).step, this.layers.get(3).Fcollumns, false);
-		this.layers.get(4).convolution(this.layers.get(4).cells, this.layers.get(4).filters, this.layers.get(5).cells,
-				this.layers.get(4).step, this.layers.get(4).pad, this.layers.get(4).biases, false);
-		this.layers.get(5).local(this.layers.get(5).cells, this.layers.get(5).filters, this.layers.get(6).cells,
-				this.layers.get(5).step, this.layers.get(5).pad, this.layers.get(5).biases, false);
-		this.layers.get(6).full(this.layers.get(6).cells, this.layers.get(6).filters, this.layers.get(7).cells[0][0],
-				this.layers.get(6).step, this.layers.get(6).pad, this.layers.get(6).biases, false, false);
-		this.layers.get(7).full(this.layers.get(7).cells, this.layers.get(7).filters, this.out, this.layers.get(7).step,
-				this.layers.get(7).pad, this.layers.get(7).biases, false, true);
-		Layer.softmax(this.out);
-	}
-
-	/**
 	 * This function computes the partial derivative of the total error with
 	 * respect to a given *weight* within a network. This is a recursive
 	 * function that operates with the help of the other function with this name
@@ -300,6 +234,7 @@ public class FSONNetwork {
 
 			}
 
+			layers.get(layerIndex).filters.get(filterIndex).gradientValues[depth][row][column] = sum;
 			return sum;
 		}
 
@@ -421,6 +356,8 @@ public class FSONNetwork {
 					}
 				}
 			}
+			
+			layers.get(layerIndex).biases.get(biasIndex).derivative = sum;
 			return sum;
 		}
 	}
@@ -475,64 +412,83 @@ public class FSONNetwork {
 	private static Double computePartialDerivative(LinkedList<Layer> layers, Cell[] out, int layerIndex,
 			CellCoord outcell, double[] expected) throws Exception {
 
-		// This will hold the sum of all relevant partial derivatives;
-		// IE sum(dtotalerror/dnet_i)
-		// where i is all the weights that are applied to this cell,
-		// and total error is the total error of the whole network
-		// with respect to the given expected values in double[] expected.
-		double dEdnet = 0;
+		// If there is already a value stored for this partial derivative...
+		if (layers.get(layerIndex).cells[outcell.depth][outcell.row][outcell.column].derivative != -1) {
+			// ...then just use that
+			return layers.get(layerIndex).cells[outcell.depth][outcell.row][outcell.column].derivative;
+		} else {
+			
+			// This will hold the sum of all relevant partial derivatives;
+			// IE sum(dtotalerror/dnet_i)
+			// where i is all the weights that are applied to this cell,
+			// and total error is the total error of the whole network
+			// with respect to the given expected values in double[] expected.
+			double dEdnet = 0;
 
-		// Find all FilterConnections that use this cell for input:
-		
-		//For all filters in this layer...
-		for (int i = 0; i < layers.get(layerIndex).K; i++) {
-			// Grab all the connections for this filter
-			LinkedList<FilterConnection> currentFilterConnections = layers.get(layerIndex).filters.get(i).connections;
-			for (int j = 0; j < currentFilterConnections.size(); j++) {
-				// TODO: Account for -1s?
-				// If this filter is applied to the cell we are looking at...
-				if ((currentFilterConnections.get(j).inStart.depth <= outcell.depth)
-						&& (currentFilterConnections.get(j).inStart.row <= outcell.row)
-						&& (currentFilterConnections.get(j).inStart.column <= outcell.column)
-						&& ((currentFilterConnections.get(j).inStart.depth + layers.get(layerIndex).Fdepth) >= outcell.depth)
-						&& ((currentFilterConnections.get(j).inStart.row + layers.get(layerIndex).Frows) >= outcell.row)
-						&& ((currentFilterConnections.get(j).inStart.column
-								+ layers.get(layerIndex).Fcollumns) >= outcell.column)) {
+			// Find all FilterConnections that use this cell for input:
 
-					// Find the derivative of the total error with respect to the output cell for this connection
-					
-					// If this is the last layer before out...
-					if (layerIndex == (layers.size() -1)){
-						
-						// Grab the depth, row, and column in the filter of the weight multiplied by this cell
-						// when this connection is calculated
-						int depth = (outcell.depth - currentFilterConnections.get(j).inStart.depth);
-						int row = (outcell.row - currentFilterConnections.get(j).inStart.row);
-						int column = (outcell.column - currentFilterConnections.get(j).inStart.column);
-						
-						// Get the value of the weight multiplied by this cell
-						// when this connection is calculated.
-						// This gives us the partial derivative of the net of 
-						// the next connection with respect to the current cell 
-						// (IE our input paramater "outcell")
-						double dnetdw = layers.get(layerIndex).filters.get(i).weights[depth][row][column];
-						
-						dEdnet += (dnetdw * computeSoftmaxError(out, i, expected));
-						
-					} else {
-					
-						// Recursively calculate the derivative of the total
-						// error with respect to the output cell for this
-						// connection and add it to our sum variable
-						dEdnet += computePartialDerivative(layers, out, layerIndex+1, currentFilterConnections.get(j).out, expected);
+			// For all filters in this layer...
+			for (int i = 0; i < layers.get(layerIndex).K; i++) {
+				// Grab all the connections for this filter
+				LinkedList<FilterConnection> currentFilterConnections = layers.get(layerIndex).filters
+						.get(i).connections;
+				for (int j = 0; j < currentFilterConnections.size(); j++) {
+					// TODO: Account for -1s?
+					// If this filter is applied to the cell we are looking
+					// at...
+					if ((currentFilterConnections.get(j).inStart.depth <= outcell.depth)
+							&& (currentFilterConnections.get(j).inStart.row <= outcell.row)
+							&& (currentFilterConnections.get(j).inStart.column <= outcell.column)
+							&& ((currentFilterConnections.get(j).inStart.depth
+									+ layers.get(layerIndex).Fdepth) >= outcell.depth)
+							&& ((currentFilterConnections.get(j).inStart.row
+									+ layers.get(layerIndex).Frows) >= outcell.row)
+							&& ((currentFilterConnections.get(j).inStart.column
+									+ layers.get(layerIndex).Fcollumns) >= outcell.column)) {
+
+						// Find the derivative of the total error with respect
+						// to the output cell for this connection
+
+						// If this is the last layer before out...
+						if (layerIndex == (layers.size() - 1)) {
+
+							// Grab the depth, row, and column in the filter of
+							// the weight multiplied by this cell
+							// when this connection is calculated
+							int depth = (outcell.depth - currentFilterConnections.get(j).inStart.depth);
+							int row = (outcell.row - currentFilterConnections.get(j).inStart.row);
+							int column = (outcell.column - currentFilterConnections.get(j).inStart.column);
+
+							// Get the value of the weight multiplied by this
+							// cell
+							// when this connection is calculated.
+							// This gives us the partial derivative of the net
+							// of
+							// the next connection with respect to the current
+							// cell
+							// (IE our input paramater "outcell")
+							double dnetdw = layers.get(layerIndex).filters.get(i).weights[depth][row][column];
+
+							dEdnet += (dnetdw * computeSoftmaxError(out, i, expected));
+
+						} else {
+
+							// Recursively calculate the derivative of the total
+							// error with respect to the output cell for this
+							// connection and add it to our sum variable
+							dEdnet += computePartialDerivative(layers, out, layerIndex + 1,
+									currentFilterConnections.get(j).out, expected);
+						}
+
 					}
-					
-					
 				}
 			}
-		}
 
-		return dEdnet;
+			layers.get(layerIndex).cells[outcell.depth][outcell.row][outcell.column].derivative = dEdnet;
+			return dEdnet;
+			
+		}
+		
 	}
 
 	/**
@@ -792,6 +748,15 @@ public class FSONNetwork {
 					// 3.b) Reset all stored gradients for all the biases for this layer
 					for (int b = 0; b < currentLayer.biases.size(); b++) {
 						currentLayer.biases.get(b).derivative = -1;
+					}
+					
+					// 3.c) Reset all stored gradients for all the cells in this layer
+					for (int x = 0; x < currentLayer.depth; x++) {
+						for (int y = 0; y < currentLayer.rows; y++) {
+							for (int z = 0; z < currentLayer.collumns; z++) {
+								currentLayer.cells[x][y][z].derivative = -1;
+							}
+						}
 					}
 
 				}

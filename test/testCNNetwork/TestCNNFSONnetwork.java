@@ -261,13 +261,6 @@ public class TestCNNFSONnetwork {
 	@Test
 	public void test() throws Exception {
 		
-		//Test that using the "calculate" function in FSONNetwork results in the same values as doing it manually
-		FSONNetwork test = new FSONNetwork();
-		test.sampleCalculate(image);
-		for (int i = 0; i < out.length; i++) {
-			assertEquals(out[i].value, test.out[i].value, 0);
-		}
-		
 		//Test that using the "openFileInput" function in FSONNetwork results in the same values as doing it manually
 		FSONNetwork test2 = new FSONNetwork();
 		FSONNetwork.openFileInput(test2.layers, "print.jpg");

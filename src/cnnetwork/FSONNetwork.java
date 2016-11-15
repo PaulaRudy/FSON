@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -690,19 +691,6 @@ public class FSONNetwork {
 		// Now we have the absolute path of a file located in the root directory of this project.
 		String absPath = substr.concat(saveFile);
 		
-		// Open a file, using the path created above, to store our progress while learning.
-		// This file can then be used to recover a network if we are interrupted while learning.
-		File file = new File(absPath);
-
-		// Make sure to create a new file if it doesn't already exist
-		if (!file.exists()) {
-			file.createNewFile();
-		}
-
-		// Open a writer to use to output to the file.
-		FileWriter fw = new FileWriter(file);
-		BufferedWriter bw = new BufferedWriter(fw);
-		
 		// Find the starting error.
 		System.out.println("Calculating error before learning.");
 		double totalError = crossEntropyTotalError(layers, out, input, dictionary, independent);
@@ -794,34 +782,35 @@ public class FSONNetwork {
 
 						}
 
+						// Open a file, using the path created above, to store our progress while learning.
+						// This file can then be used to recover a network if we are interrupted while learning.
+						PrintWriter fw = new PrintWriter(absPath);
+						
 						// 3. Reset stored gradients and write the new weights to the file
 						// 3.a) Reset all stored gradients for all layers
 						for (int j = 0; j < layers.size(); j++) {
 							// Record this layer
-							bw.write("<layer>");
-							bw.newLine();
+							fw.write("<layer>\n");
 							
 							Layer currentLayer = layers.get(j);
 
 							// Record the paramaters for this layer
-							bw.write(currentLayer.collumns + "," + currentLayer.rows+ "," + currentLayer.depth + "," + currentLayer.Fcollumns + "," + currentLayer.Frows + "," + currentLayer.Fdepth + "," + currentLayer.K + ","+ currentLayer.step+ ","+ currentLayer.pad+ "," + currentLayer.type);
-							bw.newLine();
-							bw.flush();
+							fw.write(currentLayer.collumns + "," + currentLayer.rows+ "," + currentLayer.depth + "," + currentLayer.Fcollumns + "," + currentLayer.Frows + "," + currentLayer.Fdepth + "," + currentLayer.K + ","+ currentLayer.step+ ","+ currentLayer.pad+ "," + currentLayer.type+"\n");
+							fw.flush();
 
 							// Record the cells of this layer
-							bw.write("<cells>");
-							bw.newLine();
+							fw.write("<cells>\n");
+							
 							// 3.c) Reset all stored gradients for all the cells in this layer, recording their value and derivative first
 							for (int x = 0; x < currentLayer.depth; x++) {
 								for (int y = 0; y < currentLayer.rows; y++) {
 									for (int z = 0; z < currentLayer.collumns; z++) {
-										bw.write(currentLayer.cells[x][y][z].value + "," + currentLayer.cells[x][y][z].derivative);
-										bw.newLine();
+										fw.write(currentLayer.cells[x][y][z].value + "," + currentLayer.cells[x][y][z].derivative+"\n");
 										currentLayer.cells[x][y][z].derivative = -1;
 									}
 								}
 							}
-							bw.flush();
+							fw.flush();
 
 
 							// 3.a) Reset all stored gradients for all the filters for this layer ("currentLayer")
@@ -829,15 +818,13 @@ public class FSONNetwork {
 								Filter currentFilter = currentLayer.filters.get(f);
 
 								// Record this filter
-								bw.write("<filter>");
-								bw.newLine();
+								fw.write("<filter>\n");
 
 								// 3.a.i) Reset all stored gradients for each weight within this filter ("currentFilter"), recording the filter weights and gradients first
 								for (int x = 0; x < currentLayer.Fdepth; x++) {
 									for (int y = 0; y < currentLayer.Frows; y++) {
 										for (int z = 0; z < currentLayer.Fcollumns; z++) {
-											bw.write(currentFilter.weights[x][y][z] + ","+ currentFilter.gradientValues[x][y][z]);
-											bw.newLine();
+											fw.write(currentFilter.weights[x][y][z] + ","+ currentFilter.gradientValues[x][y][z]+"\n");
 											currentFilter.gradientValues[x][y][z] = -1;
 										}
 									}
@@ -846,38 +833,32 @@ public class FSONNetwork {
 								// Record the connections of this filter
 								for (int x = 0; x < currentFilter.connections.size(); x++){
 									FilterConnection currentConnection = currentFilter.connections.get(x);
-									bw.write("<connection>");
-									bw.newLine();
-									bw.write(currentConnection.biasIndex+","+ currentConnection.inStart.depth +","+ currentConnection.inStart.row +","+ currentConnection.inStart.column +"," + currentConnection.out.depth +","+ currentConnection.out.row +","+currentConnection.out.column);
-									bw.newLine();
-									bw.flush();
+									fw.write("<connection>\n");
+									fw.write(currentConnection.biasIndex+","+ currentConnection.inStart.depth +","+ currentConnection.inStart.row +","+ currentConnection.inStart.column +"," + currentConnection.out.depth +","+ currentConnection.out.row +","+currentConnection.out.column+"\n");
+									fw.flush();
 								}
 
 								// Indicate the end of this filter's data
-								bw.write("</filter>");
-								bw.newLine();
-								bw.flush();
+								fw.write("</filter>\n");
+								fw.flush();
 							}
 
 							// 3.b) Reset all stored gradients for all the biases for this layer, recording their values and derivatives first
 							for (int b = 0; b < currentLayer.biases.size(); b++) {
-								bw.write("<bias>");
-								bw.newLine();
-								bw.write(currentLayer.biases.get(b).derivative + "," + currentLayer.biases.get(b).value);
-								bw.newLine();
+								fw.write("<bias>\n");
+								fw.write(currentLayer.biases.get(b).derivative + "," + currentLayer.biases.get(b).value+"\n");
 								currentLayer.biases.get(b).derivative = -1;
 							}
 
 							// If we have recorded a bias, indicate the end of the list of biases
 							if (currentLayer.biases.size() >0){
-								bw.write("</biases>");
-								bw.newLine();
+								fw.write("</biases>\n");
 							}
 
 							// Indicate the end of this layer's data
-							bw.write("</layer>");
-							bw.newLine();
-							bw.flush();
+							fw.write("</layer>\n");
+							fw.flush();
+							fw.close();
 						}
 					}
 					
@@ -891,8 +872,6 @@ public class FSONNetwork {
 			// Recalculate the learning rate
 			learningRate = Layer.activationFunction(totalError) * learningFactor;
 		}
-		bw.close();
-
 	}
 
 	/**

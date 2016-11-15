@@ -21,4 +21,23 @@ public enum LayerType {
 		return value;
 	}
 	
+	public static LayerType fromString(String type){
+	     switch (type) {
+         case "CONV":
+         case "1":
+             return LayerType.CONV;
+         case "MAXPOOL":
+         case "2":
+        	 return LayerType.MAXPOOL;
+         case "LOCAL":
+         case "3":
+             return LayerType.LOCAL;
+		case "FULLY":
+         case "4":
+        	 return LayerType.FULLY;
+         default:
+             throw new IllegalArgumentException("Invalid LayerType: " + type);
+     }
+	}
+	
 };

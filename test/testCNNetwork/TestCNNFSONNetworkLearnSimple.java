@@ -75,7 +75,7 @@ public class TestCNNFSONNetworkLearnSimple {
 		dictionary[8][0] = 0;
 		dictionary[9][0] = 0;
 		
-		FSONNetwork.learn(1, layers, out, input, 500, dictionary, true);
+		FSONNetwork.learn(1, layers, out, input, 500, dictionary, true, "TestCNNFSONNetworkLearnSimple");
 
 	}
 

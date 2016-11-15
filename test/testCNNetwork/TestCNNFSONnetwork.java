@@ -262,7 +262,7 @@ public class TestCNNFSONnetwork {
 	public void test() throws Exception {
 		
 		//Test that using the "openFileInput" function in FSONNetwork results in the same values as doing it manually
-		FSONNetwork test2 = new FSONNetwork();
+		FSONNetwork test2 = FSONNetwork.sampleNetwork();
 		FSONNetwork.openFileInput(test2.layers, "print.jpg");
 		test2.layers.get(0).convolution(test2.layers.get(0).cells, test2.layers.get(0).filters, test2.layers.get(1).cells, test2.layers.get(0).step, test2.layers.get(0).pad, test2.layers.get(0).biases, false);
 		test2.layers.get(1).pool(test2.layers.get(1).cells, test2.layers.get(1).filters, test2.layers.get(2).cells, test2.layers.get(1).step, test2.layers.get(1).Fcollumns, false);
@@ -278,7 +278,7 @@ public class TestCNNFSONnetwork {
 		}
 		
 		//Test that using the "feedForward" and "openFileInput" functions in FSONNetwork results in the same values as doing it manually
-		FSONNetwork test3 = new FSONNetwork();
+		FSONNetwork test3 = FSONNetwork.sampleNetwork();
 		FSONNetwork.openFileInput(test3.layers, "print.jpg");
 		FSONNetwork.feedForward(test3.layers, test3.out, false);
 		Layer.softmax(test3.out);

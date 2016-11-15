@@ -1,13 +1,16 @@
 package cnnetwork;
 
-import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-
-import javax.imageio.ImageIO;
 
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -15,8 +18,6 @@ import org.opencv.core.Mat;
 import org.opencv.core.Size;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
-
-import image.Align;
 
 /**
  * This class contains all the functions necesscary to implement a full network,
@@ -30,6 +31,26 @@ public class FSONNetwork {
 
 	public LinkedList<Layer> layers; // The layers that make up this network
 	public Cell[] out; // This is the last "layer" of this network, the "output".
+	public String saveFile; // This is the filename of the text file used to store this network's information for recovery purposes if learning is interupted.
+	
+	public FSONNetwork(LinkedList<Layer> layers, Cell[] out, String saveFile) {
+		this.layers = layers;
+		this.out = out;
+		this.saveFile = saveFile;
+	}
+
+	public FSONNetwork(LinkedList<Layer> layers, Cell[] out) {
+		this.layers = layers;
+		this.out = out;
+		this.saveFile = null;
+	}
+	
+	public FSONNetwork() {
+		this.layers = new  LinkedList<Layer>();
+		this.out = null;
+		this.saveFile = null;
+	}
+	
 
 	/**
 	 * This function creates and sets up a sample FSON network. 
@@ -37,8 +58,11 @@ public class FSONNetwork {
 	 * convoltional layers. Layers 2 and 4 are maxpool layers. Layers 6 and 7
 	 * are locally connected layers, and layer 8 is a fully connected layer. 
 	 * The weights of all the filters are 0.5, and all biases are 0.
+	 * Please note that a save file is not initialized by this function.
 	 */
-	public FSONNetwork() {
+	public static FSONNetwork sampleNetwork() {
+		
+		FSONNetwork sn = new FSONNetwork();
 
 		// Declare and initialize the first layer
 		Layer l1 = new Layer(76, 76, 3, 5, 5, 3, 32, 1, 0, LayerType.CONV);
@@ -78,26 +102,27 @@ public class FSONNetwork {
 		l8.initLayer();
 
 		// This is the last "layer": this will hold the output of the network
-		this.out = new Cell[2016];
+		sn.out = new Cell[2016];
 
 		// Initialize the cells because java won't do it for you
 		for (int i = 0; i < 2016; i++) {
-			this.out[i] = new Cell();
+			sn.out[i] = new Cell();
 		}
 
 		// Initialize the list of layers
-		this.layers = new LinkedList<Layer>();
+		sn.layers = new LinkedList<Layer>();
 
 		// Add each layer at the appropriate place in the list.
-		this.layers.add(0, l1);
-		this.layers.add(1, l2);
-		this.layers.add(2, l3);
-		this.layers.add(3, l4);
-		this.layers.add(4, l5);
-		this.layers.add(5, l6);
-		this.layers.add(6, l7);
-		this.layers.add(7, l8);
+		sn.layers.add(0, l1);
+		sn.layers.add(1, l2);
+		sn.layers.add(2, l3);
+		sn.layers.add(3, l4);
+		sn.layers.add(4, l5);
+		sn.layers.add(5, l6);
+		sn.layers.add(6, l7);
+		sn.layers.add(7, l8);
 
+		return sn;
 	}
 
 	/**
@@ -635,6 +660,11 @@ public class FSONNetwork {
 	 *            function on the last "layer" (out[]), whereas a dependent
 	 *            network uses the softmax activation function on the last
 	 *            "layer" (out[]).
+	 * @param saveFile
+	 *            The filename, in string form, of a text file used to store the
+	 *            network's progress while learning. This file can then be used
+	 *            to recover a network if it interrupted while learning. This
+	 *            file can be found in the root directory of this project.
 	 * @throws Exception
 	 *             This exception is thrown when a problem occurs while
 	 *             calculating the activation function for a cell. See
@@ -645,9 +675,36 @@ public class FSONNetwork {
 	 *             more details.
 	 */
 	public static void learn(double learningFactor, LinkedList<Layer> layers, Cell[] out, String[] input,
-			int iterations, double[][] dictionary, boolean independent) throws Exception {
+			int iterations, double[][] dictionary, boolean independent, String saveFile) throws Exception {
 
+		// Grab the location of this class file in the filesystem
+		URL location = FSONNetwork.class.getProtectionDomain().getCodeSource().getLocation();
+
+		String urlString = location.toString();
+
+		// Chop the end off the string,
+		// resulting in the filepath of the root of this project
+		String substr = urlString.substring(5, (urlString.length() - 4));
+
+		// Add the filename to the end of the path.
+		// Now we have the absolute path of a file located in the root directory of this project.
+		String absPath = substr.concat(saveFile);
+		
+		// Open a file, using the path created above, to store our progress while learning.
+		// This file can then be used to recover a network if we are interrupted while learning.
+		File file = new File(absPath);
+
+		// Make sure to create a new file if it doesn't already exist
+		if (!file.exists()) {
+			file.createNewFile();
+		}
+
+		// Open a writer to use to output to the file.
+		FileWriter fw = new FileWriter(file);
+		BufferedWriter bw = new BufferedWriter(fw);
+		
 		// Find the starting error.
+		System.out.println("Calculating error before learning.");
 		double totalError = crossEntropyTotalError(layers, out, input, dictionary, independent);
 		System.out.println("Starting learning. Error is: " + totalError);
 
@@ -665,99 +722,165 @@ public class FSONNetwork {
 			for (int r = 0; r < input.length; r++) {
 				int s = randomList.get(r);
 
-				// 1.b.i) Open the next input file denoted by the string stored
-				// in the input array, in a random order, and feed that input
-				// into the first layer.
-				
-				// If the first layer only has a depth of 1, that means the
-				// input is supposed to be black and white, so use the
-				// appropriate function to open it
-				if (layers.getFirst().cells.length == 1) {
-					openFileInputBW(layers, input[s]);
-				} else { // If the first layer has more than a single depth,
+				// If there is an input to be learned at this index...
+				if ((input[s] != null) && (!input[s].equals(""))){
+					
+					// There might be multiple inputs at this index
+					// So split the input...
+					String[] inputs = input[s].split("	");
+					int numInputs = inputs.length;
+					
+					//...and access each input in turn
+					for (int n = 0; n<numInputs; n++){
+						
+						// Open the next input file denoted by the string stored
+						// in the input array, in a random order, and feed that input
+						// into the first layer.
+
+						// If the first layer only has a depth of 1, that means the
+						// input is supposed to be black and white, so use the
+						// appropriate function to open it
+						if (layers.getFirst().cells.length == 1) {
+							openFileInputBW(layers, inputs[n]);
+						} else { // If the first layer has more than a single depth,
 							// that means it is expecting an image with multiple
 							// channels, so use the appropriate function to open
 							// it
-					openFileInput(layers, input[s]);
-				}
+							openFileInput(layers, inputs[n]);
+						}
 
-				// 1.b.ii) Feed the input through the rest of the network
-				feedForward(layers, out, false);
-				
-				// If the output cells are independent of one another, use the sigmoid activation function
-				if (independent) {
-					for (int w = 0; w < out.length; w++) {
-						out[w].value = Layer.activationFunction(out[w].value);
-					}
-				} else {// The output cells are dependent, and so we must use the softmax activation function
-					Layer.softmax(out);
-				}
+						// 1.b.ii) Feed the input through the rest of the network
+						feedForward(layers, out, false);
 
-				// 2. Increment all weights:
+						// If the output cells are independent of one another, use the sigmoid activation function
+						if (independent) {
+							for (int w = 0; w < out.length; w++) {
+								out[w].value = Layer.activationFunction(out[w].value);
+							}
+						} else {// The output cells are dependent, and so we must use the softmax activation function
+							Layer.softmax(out);
+						}
 
-				// 2.a) Increment all weights for all the layers, working backward.
-				for (int j = (layers.size() - 1); j >= 0; j--) {
-					Layer currentLayer = layers.get(j);
+						// 2. Increment all weights:
 
-					// 2.a.i) Increment all weights for all the filters for this layer ("currentLayer")
-					for (int f = 0; f < currentLayer.filters.size(); f++) {
-						Filter currentFilter = currentLayer.filters.get(f);
+						// 2.a) Increment all weights for all the layers, working backward.
+						for (int j = (layers.size() - 1); j >= 0; j--) {
+							Layer currentLayer = layers.get(j);
 
-						// 2.a.i.1) Increment each weight within this filter ("currentFilter")
-						for (int x = 0; x < currentLayer.Fdepth; x++) {
-							for (int y = 0; y < currentLayer.Frows; y++) {
-								for (int z = 0; z < currentLayer.Fcollumns; z++) {
-									// Note that "dictionary[s]" is used because
-									// the sth entry in the dictionary is the expected output for this input
-									// ("input[s]").
-									currentFilter.weights[x][y][z] = stepGradient(learningRate, layers, out, j, f, x, y, z, dictionary[s]);
+							// 2.a.i) Increment all weights for all the filters for this layer ("currentLayer")
+							for (int f = 0; f < currentLayer.filters.size(); f++) {
+								Filter currentFilter = currentLayer.filters.get(f);
+
+								// 2.a.i.1) Increment each weight within this filter ("currentFilter")
+								for (int x = 0; x < currentLayer.Fdepth; x++) {
+									for (int y = 0; y < currentLayer.Frows; y++) {
+										for (int z = 0; z < currentLayer.Fcollumns; z++) {
+											// Note that "dictionary[s]" is used because
+											// the sth entry in the dictionary is the expected output for this input
+											// (the "n"th entry in the input at input[s]).
+											currentFilter.weights[x][y][z] = stepGradient(learningRate, layers, out, j, f, x, y, z, dictionary[s]);
+										}
+									}
 								}
 							}
+
+							// 2.b) Increment all the biases for this layer:
+							for (int b = 0; b < currentLayer.biases.size(); b++) {
+								// Note that "dictionary[s]" is used because the sth
+								// entry in the dictionary is the expected output for
+								// this input (the "n"th entry in the input at input[s])
+								currentLayer.biases.get(b).value = stepGradient(learningRate, layers, out, j, b, dictionary[s]);
+							}
+
 						}
-					}
 
-					// 2.b) Increment all the biases for this layer:
-					for (int b = 0; b < currentLayer.biases.size(); b++) {
-						// Note that "dictionary[s]" is used because the sth
-						// entry in the dictionary is the expected output for
-						// this input ("input[s]")
-						currentLayer.biases.get(b).value = stepGradient(learningRate, layers, out, j, b, dictionary[s]);
-					}
+						// 3. Reset stored gradients and write the new weights to the file
+						// 3.a) Reset all stored gradients for all layers
+						for (int j = 0; j < layers.size(); j++) {
+							// Record this layer
+							bw.write("<layer>");
+							bw.newLine();
+							
+							Layer currentLayer = layers.get(j);
 
-				}
+							// Record the paramaters for this layer
+							bw.write(currentLayer.collumns + "," + currentLayer.rows+ "," + currentLayer.depth + "," + currentLayer.Fcollumns + "," + currentLayer.Frows + "," + currentLayer.Fdepth + "," + currentLayer.K + ","+ currentLayer.step+ ","+ currentLayer.pad+ "," + currentLayer.type);
+							bw.newLine();
+							bw.flush();
 
-				// 3. Reset stored gradients
-				// 3.a) Reset all stored gradients for all layers
-				for (int j = 0; j < layers.size(); j++) {
-					Layer currentLayer = layers.get(j);
-
-					// 3.a) Reset all stored gradients for all the filters for this layer ("currentLayer")
-					for (int f = 0; f < currentLayer.filters.size(); f++) {
-						Filter currentFilter = currentLayer.filters.get(f);
-
-						// 3.a.i) Reset all stored gradients for each weight within this filter ("currentFilter")
-						for (int x = 0; x < currentLayer.Fdepth; x++) {
-							for (int y = 0; y < currentLayer.Frows; y++) {
-								for (int z = 0; z < currentLayer.Fcollumns; z++) {
-									currentFilter.gradientValues[x][y][z] = -1;
+							// Record the cells of this layer
+							bw.write("<cells>");
+							bw.newLine();
+							// 3.c) Reset all stored gradients for all the cells in this layer, recording their value and derivative first
+							for (int x = 0; x < currentLayer.depth; x++) {
+								for (int y = 0; y < currentLayer.rows; y++) {
+									for (int z = 0; z < currentLayer.collumns; z++) {
+										bw.write(currentLayer.cells[x][y][z].value + "," + currentLayer.cells[x][y][z].derivative);
+										bw.newLine();
+										currentLayer.cells[x][y][z].derivative = -1;
+									}
 								}
 							}
-						}
-					}
+							bw.flush();
 
-					// 3.b) Reset all stored gradients for all the biases for this layer
-					for (int b = 0; b < currentLayer.biases.size(); b++) {
-						currentLayer.biases.get(b).derivative = -1;
+
+							// 3.a) Reset all stored gradients for all the filters for this layer ("currentLayer")
+							for (int f = 0; f < currentLayer.filters.size(); f++) {
+								Filter currentFilter = currentLayer.filters.get(f);
+
+								// Record this filter
+								bw.write("<filter>");
+								bw.newLine();
+
+								// 3.a.i) Reset all stored gradients for each weight within this filter ("currentFilter"), recording the filter weights and gradients first
+								for (int x = 0; x < currentLayer.Fdepth; x++) {
+									for (int y = 0; y < currentLayer.Frows; y++) {
+										for (int z = 0; z < currentLayer.Fcollumns; z++) {
+											bw.write(currentFilter.weights[x][y][z] + ","+ currentFilter.gradientValues[x][y][z]);
+											bw.newLine();
+											currentFilter.gradientValues[x][y][z] = -1;
+										}
+									}
+								}
+
+								// Record the connections of this filter
+								for (int x = 0; x < currentFilter.connections.size(); x++){
+									FilterConnection currentConnection = currentFilter.connections.get(x);
+									bw.write("<connection>");
+									bw.newLine();
+									bw.write(currentConnection.biasIndex+","+ currentConnection.inStart.depth +","+ currentConnection.inStart.row +","+ currentConnection.inStart.column +"," + currentConnection.out.depth +","+ currentConnection.out.row +","+currentConnection.out.column);
+									bw.newLine();
+									bw.flush();
+								}
+
+								// Indicate the end of this filter's data
+								bw.write("</filter>");
+								bw.newLine();
+								bw.flush();
+							}
+
+							// 3.b) Reset all stored gradients for all the biases for this layer, recording their values and derivatives first
+							for (int b = 0; b < currentLayer.biases.size(); b++) {
+								bw.write("<bias>");
+								bw.newLine();
+								bw.write(currentLayer.biases.get(b).derivative + "," + currentLayer.biases.get(b).value);
+								bw.newLine();
+								currentLayer.biases.get(b).derivative = -1;
+							}
+
+							// If we have recorded a bias, indicate the end of the list of biases
+							if (currentLayer.biases.size() >0){
+								bw.write("</biases>");
+								bw.newLine();
+							}
+
+							// Indicate the end of this layer's data
+							bw.write("</layer>");
+							bw.newLine();
+							bw.flush();
+						}
 					}
 					
-					// 3.c) Reset all stored gradients for all the cells in this layer
-					for (int x = 0; x < currentLayer.depth; x++) {
-						for (int y = 0; y < currentLayer.rows; y++) {
-							for (int z = 0; z < currentLayer.collumns; z++) {
-								currentLayer.cells[x][y][z].derivative = -1;
-							}
-						}
-					}
 
 				}
 			}
@@ -768,6 +891,7 @@ public class FSONNetwork {
 			// Recalculate the learning rate
 			learningRate = Layer.activationFunction(totalError) * learningFactor;
 		}
+		bw.close();
 
 	}
 
@@ -780,8 +904,8 @@ public class FSONNetwork {
 	 *            The layers that make up this network
 	 * @param filename
 	 *            The filename of the file to be opened/used, in string form.
-	 *            Note that the file must be in same location as Align class
-	 *            file.
+	 *            Note that the file must be in the root directory of this
+	 *            project.
 	 * @throws Exception
 	 *             This exception is thrown when a problem occurs while
 	 *             calculating the activation function for a cell. See
@@ -791,21 +915,42 @@ public class FSONNetwork {
 	 *             input.
 	 */
 	public static void openFileInput(LinkedList<Layer> layers, String filename) throws Exception {
-		// The file named here must be in same location as Align class file
-		// This will throw an IOException if it fails.
-		BufferedImage image = ImageIO.read(Align.class.getResource(filename));
+		
+		// Grab the location of this class file in the filesystem
+		URL location = FSONNetwork.class.getProtectionDomain().getCodeSource().getLocation();
+
+		String urlString = location.toString();
+
+		// Chop the end off the string,
+		// resulting in the filepath of the root of this project
+		String substr = urlString.substring(5, (urlString.length() - 4));
+
+		// Add the filename to the end of the path.
+		// Now we have the absolute path of a file located in the root directory
+		// of this project
+		String absPath = substr.concat(filename);
+		
+		System.out.println("Reading: "+absPath);
 
 		// This is necessary to use any of the OpenCV functions
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 
-		// First, convert the image to an OpenCV Mat.
-		// This function can be found in image.Align.java
-		Mat test = Align.bufferedImageToMat(image);
+		// Actually read the file into a Mat object
+		Mat img = Highgui.imread(absPath, 1);
 
-		// Next, resize the image to the size needed.
+		// "imread" fails silently,
+		// so be sure to check the file to make sure it was read successfully.
+		if (img.cols() == 0) {
+			throw new IOException("Error reading file");
+		}
+
+		// This is necessary to use any of the OpenCV functions
+		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+
+		// Resize the image to the size needed.
 		Mat resizedImage = new Mat();
 		Size sz = new Size(layers.get(0).collumns, layers.get(0).rows);
-		Imgproc.resize(test, resizedImage, sz);
+		Imgproc.resize(img, resizedImage, sz);
 
 		// Split the image into desired number of color channels
 		List<Mat> channels = new ArrayList<Mat>(3);// Channels are stored here in the order RGB
@@ -840,8 +985,8 @@ public class FSONNetwork {
 	 *            The layers that make up this network
 	 * @param filename
 	 *            The filename of the file to be opened/used, in string form.
-	 *            Note that the file must be in same location as Align class
-	 *            file.
+	 *            Note that the file must be in the root directory of this 
+	 *            project.
 	 * @throws Exception
 	 *             This exception is thrown when a problem occurs while
 	 *             calculating the activation function for a cell. See
@@ -865,6 +1010,8 @@ public class FSONNetwork {
 		// Add the filename to the end of the path.
 		// Now we have the absolute path of a file located in the root directory of this project
 		String absPath = substr.concat(filename);
+
+		System.out.println("Reading: "+absPath);
 
 		// This is necessary to use any of the OpenCV functions
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -925,9 +1072,10 @@ public class FSONNetwork {
 	 */
 	public static void feedForward(LinkedList<Layer> layers, Cell[] out, boolean store) throws Exception {
 
+		//For all layers in this network but the last one before out...
 		for (int i = 0; i < (layers.size() - 1); i++) {
 			Layer currentLayer = layers.get(i);
-			Layer nextLayer = layers.get(i + 1);
+			Layer nextLayer = layers.get(i + 1); //This is needed because the next layer contains the output of the first
 
 			switch (currentLayer.type) {
 			case CONV:
@@ -953,6 +1101,8 @@ public class FSONNetwork {
 			}
 		}
 
+		// Calculate the last layer's output into "out".
+		// This will always be a fully connected layer.
 		Layer lastLayer = layers.getLast();
 		lastLayer.full(lastLayer.cells, lastLayer.filters, out, lastLayer.step, lastLayer.pad, lastLayer.biases, store,
 				true);
@@ -1002,50 +1152,64 @@ public class FSONNetwork {
 			double[][] dictionary, boolean independent) throws Exception {
 		double sum = 0;
 
+		double count = 0;
 		// For each example in the training data...
 		for (int i = 0; i < input.length; i++) {
 
-			// Open that example and feed it through the network:
-			// If the first layer only has a depth of 1, that means the input is
-			// supposed to be black and white, so use the appropriate function
-			// to open it
-			if (layers.getFirst().cells.length == 1) {
-				openFileInputBW(layers, input[i]);
-			} else { // If the first layer has more than a single depth, that
-						// means it is expecting an image with multiple
-						// channels, so use the appropriate function to open it
-				openFileInput(layers, input[i]);
-			}
+			//If there is an input to be learned at this index...
+			if ((input[i] != null) && (!input[i].equals(""))){
+				
+				String[] inputs = input[i].split(",");
+				int numInputs = inputs.length;
+				for (int n = 0; n<numInputs; n++){
+					count++;
+					// Open that example and feed it through the network:
+					// If the first layer only has a depth of 1, that means the input is
+					// supposed to be black and white, so use the appropriate function
+					// to open it
+					if (layers.getFirst().cells.length == 1) {
+						openFileInputBW(layers, inputs[n]);
+					} else { // If the first layer has more than a single depth, that
+								// means it is expecting an image with multiple
+								// channels, so use the appropriate function to open it
+						openFileInput(layers, inputs[n]);
+					}
 
-			// Feed the input through the network (conduct a forward pass)
-			feedForward(layers, out, false);
+					// Feed the input through the network (conduct a forward pass)
+					feedForward(layers, out, false);
 
-			// If the output cells are independent of one another, use the sigmoid activation function
-			if (independent) {
-				for (int w = 0; w < out.length; w++) {
-					out[w].value = Layer.activationFunction(out[w].value);
+					// If the output cells are independent of one another, use the sigmoid activation function
+					if (independent) {
+						for (int w = 0; w < out.length; w++) {
+							out[w].value = Layer.activationFunction(out[w].value);
+						}
+					} else {// The output cells are dependent, and so we must use the softmax activation function
+						Layer.softmax(out);
+					}
+
+					// For each cell in out...
+					for (int k = 0; k < out.length; k++) {
+						// Add y*ln(x) + (1-y)*ln(1-x) to the sum,
+						// where y is the expected value for this cell
+						// and x is the actual value for this cell
+						if (dictionary[i][k] != out[k].value) {
+							sum += (dictionary[i][k] * Math.log(out[k].value))
+									+ ((1 - dictionary[i][k]) * Math.log(1 - out[k].value));
+						}
+
+					}
 				}
-			} else {// The output cells are dependent, and so we must use the softmax activation function
-				Layer.softmax(out);
 			}
-
-			// For each cell in out...
-			for (int k = 0; k < out.length; k++) {
-				// Add y*ln(x) + (1-y)*ln(1-x) to the sum,
-				// where y is the expected value for this cell
-				// and x is the actual value for this cell
-				if (dictionary[i][k] != out[k].value) {
-					sum += (dictionary[i][k] * Math.log(out[k].value))
-							+ ((1 - dictionary[i][k]) * Math.log(1 - out[k].value));
-				}
-
-			}
+					
+	
 
 		}
 		// Multiply sum by -1/n, where n is the number of examples in the training data
-		double error = (sum * (0 - (1 / (double) (input.length))));
+		double error = (sum * (0 - (1 / (double) (count))));
 
 		return error;
 	}
 
+
+	
 }

@@ -53,5 +53,27 @@ public class Filter {
 		this.equationAtFilter = "";
 		this.connections = new LinkedList<FilterConnection>();
 	}
+	
+	//TODO
+	public Filter(int depth, int rows, int cols) {
+		this.weights = new double[depth][rows][cols];
+		this.gradientValues = new double[depth][rows][cols];;
+		
+		// Because java initializes arrays of doubles to 0, we need to set them
+		// to -1 to indicate no gradient has been calculated yet.
+		// Depth
+		for (int l = 0; l < weights.length; l++) {
+			// Row
+			for (int m = 0; m < weights[0].length; m++) {
+				// Column
+				for (int n = 0; n < weights[0][0].length; n++) {
+					this.gradientValues[l][m][n] = -1;
+				}
+			}
+		}
+				
+		this.equationAtFilter = "";
+		this.connections = new LinkedList<FilterConnection>();
+	}
 
 }

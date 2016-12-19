@@ -1,10 +1,7 @@
 package cnnetwork;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
@@ -99,14 +96,14 @@ public class FSONNetwork {
 
 		// Create and initialize the eighth layer.
 		// This one is a fully connected layer.
-		Layer l8 = new Layer(2048, 1, 1, 2048, 1, 1, 2016, 1, 0, LayerType.FULLY);
+		Layer l8 = new Layer(2048, 1, 1, 2048, 1, 1, 5749, 1, 0, LayerType.FULLY);
 		l8.initLayer();
 
 		// This is the last "layer": this will hold the output of the network
-		sn.out = new Cell[2016];
+		sn.out = new Cell[5749];
 
 		// Initialize the cells because java won't do it for you
-		for (int i = 0; i < 2016; i++) {
+		for (int i = 0; i < 5749; i++) {
 			sn.out[i] = new Cell();
 		}
 
@@ -174,6 +171,8 @@ public class FSONNetwork {
 	 *             compute function used on the line marked
 	 *             "//Find the net value of the output cell". See
 	 *             Layer::activationFunction() for more details.
+	 *             
+	 *TODO make sure not on maxpool layer?
 	 */
 	public static double computePartialDerivative(LinkedList<Layer> layers, Cell[] out, int layerIndex, int filterIndex,
 			int depth, int row, int column, double[] expected) throws Exception {
@@ -301,7 +300,7 @@ public class FSONNetwork {
 	 *             Layer::activationFunction() for more details.
 	 * 
 	 *             TODO: error checking to make sure we're not on a maxpool
-	 *             layer
+	 *             layer, math
 	 */
 	public static double computePartialDerivative(LinkedList<Layer> layers, Cell[] out, int layerIndex, int biasIndex,
 			double[] expected) throws Exception {
@@ -753,10 +752,14 @@ public class FSONNetwork {
 
 						// 2.a) Increment all weights for all the layers, working backward.
 						for (int j = (layers.size() - 1); j >= 0; j--) {
+							System.out.println("----------------------------------------------");
+							System.out.println("Processing layer: " + j);
+							System.out.println("----------------------------------------------");
 							Layer currentLayer = layers.get(j);
 
 							// 2.a.i) Increment all weights for all the filters for this layer ("currentLayer")
 							for (int f = 0; f < currentLayer.filters.size(); f++) {
+								System.out.println("Incrementing filter: " + f);
 								Filter currentFilter = currentLayer.filters.get(f);
 
 								// 2.a.i.1) Increment each weight within this filter ("currentFilter")
@@ -777,11 +780,15 @@ public class FSONNetwork {
 								// Note that "dictionary[s]" is used because the sth
 								// entry in the dictionary is the expected output for
 								// this input (the "n"th entry in the input at input[s])
+								System.out.println("Incrementing bias: "+ b);
 								currentLayer.biases.get(b).value = stepGradient(learningRate, layers, out, j, b, dictionary[s]);
 							}
 
 						}
 
+						System.out.println("----------------------------------------------");
+						System.out.println("Recording and resetting layers");
+						System.out.println("----------------------------------------------");
 						// Open a file, using the path created above, to store our progress while learning.
 						// This file can then be used to recover a network if we are interrupted while learning.
 						PrintWriter fw = new PrintWriter(absPath);
@@ -789,6 +796,9 @@ public class FSONNetwork {
 						// 3. Reset stored gradients and write the new weights to the file
 						// 3.a) Reset all stored gradients for all layers
 						for (int j = 0; j < layers.size(); j++) {
+							System.out.println("----------------------------------------------");
+							System.out.println("Recording layer: "+ j);
+							System.out.println("----------------------------------------------");
 							// Record this layer
 							fw.write("<layer>\n");
 							
@@ -801,10 +811,12 @@ public class FSONNetwork {
 							// Record the cells of this layer
 							fw.write("<cells>\n");
 							
+							System.out.println("Recording cells");
 							// 3.c) Reset all stored gradients for all the cells in this layer, recording their value and derivative first
 							for (int x = 0; x < currentLayer.depth; x++) {
 								for (int y = 0; y < currentLayer.rows; y++) {
 									for (int z = 0; z < currentLayer.collumns; z++) {
+										
 										fw.write(currentLayer.cells[x][y][z].value + "," + currentLayer.cells[x][y][z].derivative+"\n");
 										currentLayer.cells[x][y][z].derivative = -1;
 									}
@@ -816,7 +828,7 @@ public class FSONNetwork {
 							// 3.a) Reset all stored gradients for all the filters for this layer ("currentLayer")
 							for (int f = 0; f < currentLayer.filters.size(); f++) {
 								Filter currentFilter = currentLayer.filters.get(f);
-
+								System.out.println("Recording filter: "+f );
 								// Record this filter
 								fw.write("<filter>\n");
 
@@ -845,6 +857,7 @@ public class FSONNetwork {
 
 							// 3.b) Reset all stored gradients for all the biases for this layer, recording their values and derivatives first
 							for (int b = 0; b < currentLayer.biases.size(); b++) {
+								System.out.println("Recording bias: "+b );
 								fw.write("<bias>\n");
 								fw.write(currentLayer.biases.get(b).derivative + "," + currentLayer.biases.get(b).value+"\n");
 								currentLayer.biases.get(b).derivative = -1;
@@ -865,6 +878,9 @@ public class FSONNetwork {
 
 				}
 			}
+			System.out.println("----------------------------------------------");
+			System.out.println("Recalculating error");
+			System.out.println("----------------------------------------------");
 			// Recalculate the total error
 			totalError = crossEntropyTotalError(layers, out, input, dictionary, independent);
 			System.out.println("Iteration " + i + " complete. Error is now: " + totalError);
@@ -1172,8 +1188,24 @@ public class FSONNetwork {
 						// where y is the expected value for this cell
 						// and x is the actual value for this cell
 						if (dictionary[i][k] != out[k].value) {
-							sum += (dictionary[i][k] * Math.log(out[k].value))
-									+ ((1 - dictionary[i][k]) * Math.log(1 - out[k].value));
+							double log;
+							if (out[k].value == 0){
+								log = -4;
+							}else{
+								log = Math.log(out[k].value);
+							}
+							
+							double oneMinusLog;
+							
+							if (out[k].value == 1){
+								oneMinusLog = -4;
+				
+							} else{
+								oneMinusLog = Math.log(1 - out[k].value);
+							}
+							
+							sum += (dictionary[i][k] * log)
+									+ ((1 - dictionary[i][k]) * oneMinusLog);
 						}
 
 					}
@@ -1187,6 +1219,285 @@ public class FSONNetwork {
 		double error = (sum * (0 - (1 / (double) (count))));
 
 		return error;
+	}
+	
+	/**
+	 * This function sets up the input for learning using data provided by 
+	 * Labled Faces in the Wild (http://vis-www.cs.umass.edu/lfw/).
+	 * It creates an array the length of the total number of names in the 
+	 * LFW data set, with a comma seperated list of filenames of known images of 
+	 * each person to use for learning.
+	 * The master list of names is read from the file lfw_all_names.txt in the root
+	 * directory of this project. 
+	 * 
+	 * @throws Exception An exception is thrown if an error during file IO is encountered
+	 */
+	public void learnLFW() throws Exception{
+		
+		// Grab the location of this class file in the filesystem
+		URL location = FSONNetwork.class.getProtectionDomain().getCodeSource().getLocation();
+
+		String urlString = location.toString();
+
+		// Chop the end off the string,
+		// resulting in the filepath of the root of this project
+		String substr = urlString.substring(5, (urlString.length() - 4));
+
+		// Add the filename to the end of the path.
+		// This is the file containing *all* the names.
+		String absPath = substr.concat("lfw_all_names.txt");
+
+		// Create a reader to read the names
+		BufferedReader br = new BufferedReader(new FileReader(absPath));
+		
+		// This will hold a line of text from the file
+		String line = null;
+		
+		// This will hold all the names
+		String[] names = new String[5749];
+		
+		// Read the names in
+		for(int i = 0; ((i< 5749) &&((line = br.readLine()) != null)); i++) {
+			String[] pair = line.split("	");
+			names[i] = pair[0];	
+		}
+		
+		// Close the reader
+		br.close();
+		
+		// Add the filename to the end of the path.
+		// This is the file containing the names of the pairs we are going to learn from.
+		String pairsPath = substr.concat("testingInput/pairsDevTrain2.txt");
+
+		// Create a second reader to read in the training names
+		BufferedReader br2 = new BufferedReader(new FileReader(pairsPath));
+		
+		// This will hold a line of text from the file
+		String line2 = null;
+		
+		// Read the first line of the file containing the training pairs.
+		// This will be the number of training pairs to expect.
+		// (N matches and N mismatches)
+		line2 = br2.readLine();
+		int N = Integer.parseInt(line2);
+		
+		// This array will hold the filenames of the pictures of each person, in a comma seperated list
+		String[] learnInput = new String[5749];
+
+		//This is used to help format the filenames
+		DecimalFormat formatter = new DecimalFormat("0000");
+		
+		// Read in the first set of learning pairs (the matched pairs)
+		// These lines will be in the format:
+		// name	x	y
+		//...where  x and y are the # denoting a filename of a picture of that person
+		for(int i = 0; ((i< N) &&((line2 = br2.readLine()) != null)); i++)  {
+			
+			//Split the line up by tabs
+			String[] pair = line2.split("	");
+			
+			// Find the index associated with the name just read in
+			int index = findName(names,0,5748, pair[0]);
+			
+			//Construct the filenames, using the numbers read in
+			String filename1 = "lfw/"+ pair[0]+ "/" +pair[0].concat("_")+formatter.format(Double.parseDouble(pair[1]))+".jpg";
+			String filename2 = "lfw/"+ pair[0]+ "/" +pair[0].concat("_")+formatter.format(Double.parseDouble(pair[2]))+".jpg";
+		
+			// If the name is found in the list of names
+			// and the entry at that index in learnInput is not empty 
+			// (IE filenames of input for that person have already been recorded)
+			if ((learnInput[index] != null) && (!learnInput[index].isEmpty())){
+				
+				// Grab the filenames at this index. They will be delemited by a comma.
+				String[] inputsAtIndex = learnInput[index].split(",");
+				
+				// These booleans indicate if the filenames we read in from the learning pairs
+				// are found within the filenames already stored at this index
+				boolean found1 = false;
+				boolean found2 = false;
+				
+				// Search the filenames stored at this index, recording if we find either 
+				// filename1 (by setting found1 to true) or filename2 (by setting found2 to 
+				// true
+				for (int j = 0; j< inputsAtIndex.length; j++){
+					if (inputsAtIndex[j].equals(filename1)){
+						found1 = true;
+					} else if(inputsAtIndex[j].equals(filename2)){
+						found2= true;
+					}
+				}
+				
+				// If we haven't found filename1 alreaded stored at this index,
+				// simply add it to the end of the string at this index with a
+				// delimiting comma
+				if (!found1){
+					learnInput[index] = learnInput[index].concat(","+filename1);
+				}
+				
+				// If we haven't found filename2 alreaded stored at this index,
+				// simply add it to the end of the string at this index with a
+				// delimiting comma
+				if (!found2){
+					learnInput[index] = learnInput[index].concat(","+filename2);
+				}
+				
+			} else{ // The entry at this index doesn't have any input filenames stored
+				// here yet
+				
+				// If the filenames aren't the same
+				if (!(filename1.equals(filename2))){
+					// Store them both at the entry for this index,
+					// seperated by a comma
+					learnInput[index] = filename1.concat(","+filename2);
+				} else {
+					// Just store the first filename, because they are 
+					// the same.
+					learnInput[index] = filename1;
+				}
+				
+			}
+		}
+
+		// This section processes the learning pairs that represent mismatches
+		// These lines will be in the format:
+		// name	x	name2 y
+		//...where  x and y are the # denoting a filename of a picture of the person named before it
+		// (IE "x" is a filename of an image of "name", "y" is a filename of an image of "name2")
+		for(int j = 0; ((j< N) &&((line2 = br2.readLine()) != null)); j++)  {
+			
+			// Split the line up by tabs
+			String[] pair = line2.split("	");
+			
+			// Find the index of the name of the first person in the pair
+			// in the master list of names
+			int index1 = findName(names,0,5748, pair[0]);
+			
+			// Find the index of the name of the second person in the pair
+			// in the master list of names
+			int index2 = findName(names,0,5748, pair[2]);
+			
+			// Build the filenames for each image
+			String filename1 = "lfw/"+ pair[0]+ "/" +pair[0].concat("_")+formatter.format(Double.parseDouble(pair[1]))+".jpg";
+			String filename2 = "lfw/"+ pair[2]+ "/" +pair[2].concat("_")+formatter.format(Double.parseDouble(pair[3]))+".jpg";
+		
+
+			// First deal with the first image ("filename1", a picture of the person named at "index1")
+			// If the name was found in the master list of names (ie the entry at this index is not null)
+			// and the entry at this index already contains filenames
+			if ((learnInput[index1] != null) && (!learnInput[index1].isEmpty())){
+				
+				// Split the string containing the list of filenames up by the delimiting commas
+				String[] inputsAtIndex = learnInput[index1].split(",");
+				
+				// This boolean will tell us if we find filename1 in this list
+				boolean found1 = false;
+				
+				// Search the list of filenames contained in the entry at this index for filename1
+				int k =0;
+				while ((k< inputsAtIndex.length)&&(!found1)){
+					if (inputsAtIndex[k].equals(filename1)){
+						found1 = true;
+					} else {
+					k++;
+					}
+				}
+				
+				// If we don't find filename1 in the list of filenames at this entry...
+				if (!found1){
+					//... add it to the end of the list with a delimiting comma
+					learnInput[index1] = learnInput[index1].concat(","+filename1);
+				}
+				
+			} else{ // The entry at this index is empty
+				learnInput[index1] = filename1; // So store the filename here
+			}
+			
+			// Now we deal with the second image ("filename2", a picture of the person named at "index2")
+			// If the name was found in the master list of names (ie the entry at this index is not null)
+			// and the entry at this index already contains filenames
+			if ((learnInput[index2] != null) && (!learnInput[index2].isEmpty())){
+				
+				// Split the string containing the list of filenames up by the delimiting commas
+				String[] inputsAtIndex = learnInput[index2].split(",");
+				
+				// This boolean will tell us if we find filename2 in this list
+				boolean found2 = false;
+				
+				// Search the list of filenames contained in the entry at this index for filename2
+				int k =0;
+				while ((k< inputsAtIndex.length)&&(!found2)){
+					if (inputsAtIndex[k].equals(filename1)){
+						found2 = true;
+					} else {
+					k++;
+					}
+				}
+				
+				// If we don't find filename2 in this list
+				if (!found2){
+					
+					// Add filename2 to the end of the list, seperated by a comma
+					learnInput[index1] = learnInput[index2].concat(","+filename2);
+				}
+				
+			} else{ // There aren't any filenames stored at this index yet
+				learnInput[index2] = filename2; // So set this entry to filename2
+			}
+			
+		}
+		
+		// Close the reader used to read in the training pairs
+		br2.close();
+		
+		// This is the dictionary used to tell the learning functions what the ideal
+		// output for a picture of that person would look like
+		double[][] dictionary = new double[5749][5749];
+		
+		// Since each entry in the array corresponds to a different person
+		// that means that the ideal output would be an array of all 0s
+		// except for the entry at that person's index.
+		// Since java initializes arrays to 0 by default, that means that
+		// all we need to do is set the "1"
+		for(int k = 0; k <dictionary.length; k++){
+			dictionary[k][k] =1;
+		}
+		
+		// Use the learning function to learn using our newly processed input and newly created dictionary.
+		// Use the file "testlearnlfw.txt" to store our progress while learning.
+		learn(1, this.layers, this.out, learnInput, 1, dictionary, false, "testlearnlfw.txt");
+		
+	}
+
+	/**
+	 * This function locates a name within an alphabetically sorted array of names
+	 * and returns the index at which that name was found. 
+	 * It uses a recursive "divide and conquor" algorythm.
+	 *  
+	 * @param names The master array of names to search
+	 * @param start The starting index of the section to search
+	 * @param end The ending index of the section to search
+	 * @param toFind The name to find within the section searched of the array
+	 * @return The index of the location of the name within the "names" array, or -1 if that name is not found 
+	 */
+	public static int findName(String[] names, int start, int end, String toFind) {
+        
+        if (start < end) {
+            int middleIndex = ((end - start) / 2) + start; 
+            if ((toFind.compareTo(names[middleIndex])) < 0){
+				return findName(names, start, middleIndex, toFind);
+
+			} else if ((toFind.compareTo(names[middleIndex])) > 0) {
+				return findName(names, middleIndex + 1, end, toFind);
+
+			} else {
+				return middleIndex;
+			}
+		} else if (toFind.compareTo(names[end]) == 0) {
+			return end;
+		} else {
+			return -1;
+		}
+
 	}
 
 

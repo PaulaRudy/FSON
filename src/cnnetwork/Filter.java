@@ -14,6 +14,7 @@ public class Filter {
 	public String equationAtFilter;// The equation used to calculate an output for this
 							// filter, stored in string form to be used with
 							// JavaCalculus
+							//TODO remove
 	public LinkedList<FilterConnection> connections;// A list of connections that use
 												// this filter, to be used in
 												// backpropagation.
@@ -54,7 +55,7 @@ public class Filter {
 		this.connections = new LinkedList<FilterConnection>();
 	}
 	
-	//TODO
+	//TODO heading
 	public Filter(int depth, int rows, int cols) {
 		this.weights = new double[depth][rows][cols];
 		this.gradientValues = new double[depth][rows][cols];;

@@ -38,6 +38,7 @@ public class TestCNNFSONnetwork {
 	public void setUp() throws Exception {
 		
 		//The file named here must be in same location as Align class file
+		//TODO fix this
 		image = ImageIO.read(Align.class.getResource("print.jpg"));
 
 		//This is necessary to use any of the OpenCV functions
@@ -263,7 +264,7 @@ public class TestCNNFSONnetwork {
 		
 		//Test that using the "openFileInput" function in FSONNetwork results in the same values as doing it manually
 		FSONNetwork test2 = FSONNetwork.sampleNetwork();
-		FSONNetwork.openFileInput(test2.layers, "print.jpg");
+		FSONNetwork.openFileInput(test2.layers, "testingInput/print.jpg");
 		test2.layers.get(0).convolution(test2.layers.get(0).cells, test2.layers.get(0).filters, test2.layers.get(1).cells, test2.layers.get(0).step, test2.layers.get(0).pad, test2.layers.get(0).biases, false);
 		test2.layers.get(1).pool(test2.layers.get(1).cells, test2.layers.get(1).filters, test2.layers.get(2).cells, test2.layers.get(1).step, test2.layers.get(1).Fcollumns, false);
 		test2.layers.get(2).convolution(test2.layers.get(2).cells, test2.layers.get(2).filters, test2.layers.get(3).cells, test2.layers.get(2).step, test2.layers.get(2).pad, test2.layers.get(2).biases, false);
@@ -279,7 +280,7 @@ public class TestCNNFSONnetwork {
 		
 		//Test that using the "feedForward" and "openFileInput" functions in FSONNetwork results in the same values as doing it manually
 		FSONNetwork test3 = FSONNetwork.sampleNetwork();
-		FSONNetwork.openFileInput(test3.layers, "print.jpg");
+		FSONNetwork.openFileInput(test3.layers, "testingInput/print.jpg");
 		FSONNetwork.feedForward(test3.layers, test3.out, false);
 		Layer.softmax(test3.out);
 		for (int i = 0; i < out.length; i++) {

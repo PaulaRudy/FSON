@@ -37,7 +37,7 @@ public class TestCNNFSONNetworkLearnSimple2 {
 		out[1] = new Cell();
 
 		// Open file for input
-		FSONNetwork.openFileInputBW(layers, "1b.jpg");
+		FSONNetwork.openFileInputBW(layers, "testingInput/1b.jpg");
 		
 		// Feed the input through the layers of the network.
 		// This sets up the connections needed for backpropagation
@@ -49,18 +49,18 @@ public class TestCNNFSONNetworkLearnSimple2 {
 		out[1].value = Layer.activationFunction(out[1].value);
 		
 		// Set up the input array (an array of the filenames of the input files,
-		// located in the root directory of the project).
+		// located from the root directory of the project).
 		String[] input = new String[10];
-		input[0] = "1b.jpg";
-		input[1] = "2b.jpg";
-		input[2] = "3b.jpg";
-		input[3] = "4b.jpg";
-		input[4] = "5b.jpg";
-		input[5] = "6b.jpg";
-		input[6] = "7b.jpg";
-		input[7] = "8b.jpg";
-		input[8] = "9b.jpg";
-		input[9] = "10b.jpg";
+		input[0] = "testingInput/1b.jpg";
+		input[1] = "testingInput/2b.jpg";
+		input[2] = "testingInput/3b.jpg";
+		input[3] = "testingInput/4b.jpg";
+		input[4] = "testingInput/5b.jpg";
+		input[5] = "testingInput/6b.jpg";
+		input[6] = "testingInput/7b.jpg";
+		input[7] = "testingInput/8b.jpg";
+		input[8] = "testingInput/9b.jpg";
+		input[9] = "testingInput/10b.jpg";
 
 		// Set up the "dictionary". This is an array of the expected outputs
 		// for each input.
@@ -99,7 +99,7 @@ public class TestCNNFSONNetworkLearnSimple2 {
 	public void test() throws Exception {
 
 		// Open file for input
-		FSONNetwork.openFileInputBW(layers, "1b.jpg");
+		FSONNetwork.openFileInputBW(layers, "testingInput/1b.jpg");
 		// Feed the input through the layers of the network.
 		FSONNetwork.feedForward(layers, out, false);
 		// Here we are using the sigmoid activation function because 
@@ -111,7 +111,7 @@ public class TestCNNFSONNetworkLearnSimple2 {
 		assertEquals( 0.0, out[1].value, 0.2);
 		
 		// Open file for input
-		FSONNetwork.openFileInputBW(layers, "7b.jpg");
+		FSONNetwork.openFileInputBW(layers, "testingInput/7b.jpg");
 		// Feed the input through the layers of the network.
 		FSONNetwork.feedForward(layers, out, false);
 		// Here we are using the sigmoid activation function because
@@ -123,7 +123,7 @@ public class TestCNNFSONNetworkLearnSimple2 {
 		assertEquals(0.0, out[1].value, 0.2);
 
 		// Open file for input
-		FSONNetwork.openFileInputBW(layers, "8b.jpg");
+		FSONNetwork.openFileInputBW(layers, "testingInput/8b.jpg");
 		// Feed the input through the layers of the network.
 		FSONNetwork.feedForward(layers, out, false);
 		// Here we are using the sigmoid activation function because

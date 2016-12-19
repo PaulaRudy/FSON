@@ -439,6 +439,7 @@ public class Layer {
 	 * @return The calculated result of the activation function
 	 * @throws Exception
 	 *             Thrown when the activation function does not return a number
+	 * TODO remove javacalc
 	 */
 	public static double activationFunction(double x) throws Exception {
 		String function = "1/(1+E^(0.0-x))";// The actual activation function, in string form
@@ -481,8 +482,14 @@ public class Layer {
 	 *             Thrown when the activation function does not return a number
 	 */
 	public static double softmaxActivationFunction(double x, double sumENet) throws Exception {
-		double result = Math.exp(x) / sumENet;
-		return result;
+		
+		if (sumENet == Double.POSITIVE_INFINITY){
+			return 0;
+		} else if(sumENet == 0){
+			return Double.POSITIVE_INFINITY;
+		}else {
+			return (Math.exp(x) / sumENet);
+		}
 	}
 
 	/**

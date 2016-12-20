@@ -1,0 +1,10 @@
+# Labeled Faces in the Wild images #
+lfw/*
+
+# binarys #
+/bin/
+
+# Temp text files
+
+*~
+

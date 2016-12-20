@@ -21,7 +21,7 @@ public class TestCNNActivationFunction {
 	@Test
 	public void test() throws Exception {
 		double result = Layer.activationFunction(2);
-		assertEquals(result, 0.8807971, 0);
+		assertEquals(result, 0.8807971, 0.0000001);
 	}
 
 }

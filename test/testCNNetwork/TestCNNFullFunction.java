@@ -231,7 +231,7 @@ public class TestCNNFullFunction {
 
 		//Compare the temp array to the values stored in the output array
 		for (int i = 0; i < temp.length; i++) {
-			assertEquals(temp[i], testOut[i].value, 0);
+			assertEquals(temp[i], testOut[i].value, 0.0000001);
 
 		}
 	}

@@ -79,18 +79,18 @@ public class TestCNNComputePartialDerivative {
 		// first filter of the last layer
 		// (IE Layer 2, Filter 1, coordinates [0][0][0]).
 		double testResultWeight5 = FSONNetwork.computePartialDerivative(layers, out, 1, 0, 0, 0, 0, expect);
-		assertEquals(0.2436862, testResultWeight5, 0.000000001);
+		assertEquals(0.2436862, testResultWeight5, 0.0000001);
 
 		// Test the calculated partial derivative of the first weight of the
 		// first filter of the first layer
 		// (IE Layer 1, Filter 1, coordinates [0][0][0]).
 		double testResultWeight1 = FSONNetwork.computePartialDerivative(layers, out, 0, 0, 0, 0, 0, expect);
-		assertEquals(0.0, testResultWeight1, 0.000000001);
+		assertEquals(0.0, testResultWeight1, 0.0000001);
 		
 		// Test the calculated partial derivative of the bias of the first layer.
 		// (IE layer 1, bias 1)
 		double testResultBias1 = FSONNetwork.computePartialDerivative(layers, out, 0, 0, expect);
-		assertEquals(0.0, testResultBias1, 0.000000001);
+		assertEquals(0.0, testResultBias1, 0.0000001);
 
 	}
 

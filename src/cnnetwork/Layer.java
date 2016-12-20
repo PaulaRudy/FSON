@@ -1,12 +1,6 @@
 package cnnetwork;
 
 import java.util.LinkedList;
-import javacalculus.core.CALC;
-import javacalculus.core.CalcParser;
-import javacalculus.evaluator.CalcSUB;
-import javacalculus.struct.CalcDouble;
-import javacalculus.struct.CalcObject;
-import javacalculus.struct.CalcSymbol;
 
 /**
  * This class contains all the code for the structure and function of a neural
@@ -437,33 +431,11 @@ public class Layer {
 	 * @param x
 	 *            The original value of the cell as a double
 	 * @return The calculated result of the activation function
-	 * @throws Exception
-	 *             Thrown when the activation function does not return a number
-	 * TODO remove javacalc
 	 */
-	public static double activationFunction(double x) throws Exception {
-		String function = "1/(1+E^(0.0-x))";// The actual activation function, in string form
-
-		// Parse the function using JavaCalculus
-		CalcParser parser = new CalcParser();
-		CalcObject parsed = parser.parse(function);
-		CalcObject resultObject = parsed.evaluate();
-
-		// Substitute the passed in value of x
-		CalcSymbol symbol = new CalcSymbol("x");
-		CalcDouble value = new CalcDouble(x);
-		resultObject = CalcSUB.numericSubstitute(resultObject, symbol, value);
-
-		// Evaluate the function using the passed in value of x
-		resultObject = CALC.SYM_EVAL(resultObject);
-
-		// Return either the numerical result or throw an exception to indicate it cannot be calculated
-		double result;
-		if (resultObject.isNumber()) {
-			result = Double.parseDouble(resultObject.toString());
-		} else {
-			throw new Exception();
-		}
+	public static double activationFunction(double x) {
+		
+		double denom = 1 + (Math.exp(0.0-x));
+		double result = 1/ denom;
 
 		return result;
 	}

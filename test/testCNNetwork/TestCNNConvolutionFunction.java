@@ -237,7 +237,7 @@ public class TestCNNConvolutionFunction {
 		for (int i = 0; i < temp.length; i++) {
 			for (int j = 0; j < temp[0].length; j++) {
 				for (int k = 0; k < temp[0][0].length; k++) {
-					assertEquals(temp[i][j][k], testOut[i][j][k].value, 0);
+					assertEquals(temp[i][j][k], testOut[i][j][k].value, 0.0000001);
 				}
 			}
 		}

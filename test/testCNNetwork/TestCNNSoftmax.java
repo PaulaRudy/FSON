@@ -54,11 +54,11 @@ public class TestCNNSoftmax {
 		//Iterate over the output, testing that we have the expected values, and summing the total of the output values.
 		for(int i = 0; i< input.length; i++){
 			sum += input[i].value;//Add this value to the sum
-			assertEquals(testout[0], input[0].value, 0);//Test to make sure this value is as expected
+			assertEquals(testout[0], input[0].value, 0.0000001);//Test to make sure this value is as expected
 		}
 		
 		//Test that the sum of the values is 1, within a tolerance of >0.00001
-		assertEquals(1, sum, 0.00001);
+		assertEquals(1, sum, 0.0000001);
 	}
 
 }

@@ -80,7 +80,10 @@ public class Layer {
 	}
 
 	/**
-	 * This function computes a single output value, given:
+	 * This function computes a single output value. Previous values are used
+	 * if any of the input values have already been updated in this session
+	 * of backpropagation (if that paticular value has a partial derivative 
+	 * already stored).
 	 * 
 	 * @param filter
 	 *            a three dimensional filter to apply
@@ -120,12 +123,27 @@ public class Layer {
 		for (int i = 0; i < filter.weights.length; i++) {
 			for (int j = 0; j < filter.weights[0].length; j++) {
 				for (int k = 0; k < filter.weights[0][0].length; k++) {
-					result += input[(depth + i)][(row + j)][(column + k)].value * filter.weights[i][j][k];
+
+					// If the filter's weight at this position has been updated during this iteration...
+					if (!Double.isNaN(filter.gradientValues[i][j][k])){
+						//... use the previous version.
+						result += input[(depth + i)][(row + j)][(column + k)].value * filter.previousWeights[i][j][k];
+					} else {
+						result += input[(depth + i)][(row + j)][(column + k)].value * filter.weights[i][j][k];
+					}
 				}
 			}
 
 		}
-		result += bias.value;// Add the bias
+		
+		// Add the bias
+		// If the bias's value has be updated during this iteration...
+		if (!Double.isNaN(bias.derivative)){
+			// ... use the previous version.
+			result+= bias.previousValue;
+		} else {
+			result += bias.value;// Add the bias
+		}
 
 		// If the result of this computation isn't going to be stored in the
 		// output of this network (if the input array is not from the last layer
@@ -481,8 +499,24 @@ public class Layer {
 		// Start with 0. This will hold the sum.
 		double total = 0;
 
-		// Iterate over all the cells.
+		// This will hold the max value in the input array
+		double max = input[0].value;
+
+		// Iterate over all the cells to find the max value
 		for (int i = 0; i < input.length; i++) {
+			if (input[i].value > max) {
+				max = input[i].value;
+			}
+		}
+
+		// Iterate over all the cells.
+		// While you do so, and before you apply the exponent,
+		// move all the datapoints to put the maximum value of the input at 0.
+		// This is to avoid problems with input that is made up of entirely
+		// very large or very small numbers, or data has both - and + numbers
+		// (because the "detail" in the dataset will be lost without treatment).
+		for (int i = 0; i < input.length; i++) {
+			input[i].value -= max;
 			total += Math.exp(input[i].value);
 		}
 
@@ -512,7 +546,25 @@ public class Layer {
 			// Because this function is only used for processing BEFORE
 			// backpropagation, we don't need to worry about any stored
 			// derivatives being preserved.
-			input[i].derivative = -1;
+			input[i].derivative = Double.NaN;
+		}
+		
+		// If all the input is the same, then it should be equal to 1/n
+		// where n is the number of inputs. 
+		// This is sometimes not the case with very large or very small numbers, 
+		// (see: the application of infinity in the softmaxActivationFunction
+		// defined in this file)
+		// ...hence this work around
+		if ((input.length > 1) && (input[0].value == input[1].value)){
+			int c;
+			for (c = 2; ((c < input.length)&& (input[c].value == input[0].value)); c++) {
+				
+			}
+			if (c  == input.length){
+				for (int i = 0; i < input.length; i++) {
+					input[i].value = 1.0/input.length;
+				}
+			}
 		}
 
 	}

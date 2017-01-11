@@ -240,7 +240,13 @@ public class TestCNNFSONnetwork {
 			//...and then into the cells of the first layer of the network.
 			for (int j = 0; j < 76; j++) {
 				for (int k = 0; k < 76; k++) {
-					l1.cells[i][j][k].value = temp[(j * 76) + k];
+					// A single channel Mat has pixels of a value between 0 and 255
+					// inclusive, where 0 is min value and 255 is max value.
+					// Since the network is expecting a value between 0 and 1, some
+					// formatting of the data is required.
+					double value = temp[(j * 76) + k];
+					value = (value-127.5)/25.5;
+					l1.cells[i][j][k].value = value;
 				}
 
 			}

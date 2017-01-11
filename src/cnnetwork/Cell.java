@@ -6,8 +6,9 @@ package cnnetwork;
  * 
  */
 public class Cell {
-	public double derivative;//Used to store the value of the derivative at this location. A value of -1 here indicates a derivative has not been found yet.
+	public double derivative;//Used to store the value of the derivative at this location. A value of Double.NaN here indicates a derivative has not been found yet.
 	public double value;// the actual value of the cell.
+	public double previousValue;// Used during backpropagation to avoid using newly incremented values during learning.
 	
 	public Cell(double derivative, double value) {
 		this.derivative = derivative;
@@ -15,12 +16,12 @@ public class Cell {
 	}
 	
 	public Cell() {
-		this.derivative = -1;// A value of -1 indicates no derivative has been found yet
+		this.derivative = Double.NaN;// A value of Double.NaN indicates no derivative has been found yet
 		this.value = 0.0;
 	}
 	
 	public Cell(double value) {
-		this.derivative = -1;// A value of -1 indicates no derivative has been found yet
+		this.derivative = Double.NaN;// A value of Double.NaN indicates no derivative has been found yet
 		this.value = value;
 	}
 	

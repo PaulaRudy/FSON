@@ -5,17 +5,16 @@
 //
 //import cnnetwork.FSONNetwork;
 //
-//public class TestCNNFSONNetworkLearnLFW {
+//public class TestCNNFSONNetworkLearnLFWSimple {
 //
 //	FSONNetwork net;
 //	@Before
 //	public void setUp() throws Exception {
-//		net = FSONNetwork.sampleNetwork();
+//		net = FSONNetwork.simpleNetwork();
 //	}
 //
 //	@Test
 //	public void test() throws Exception {
-//		net.learnLFW();
+//		net.learnLFWSimple();
 //	}
-//
 //}

@@ -239,25 +239,17 @@ public class FSONNetwork {
 					//TODO: Document this in header.
 					if (layers.get(layerIndex).type == LayerType.MAXPOOL){
 						throw new Exception("Trying to find a partial derivative with respect to a weight in a maxpool layer. This should never happen!");
-					}
-					
-					// Find the out value of the output cell:
-					double cellOut = Layer.compute(layers.get(layerIndex).filters.get(filterIndex),
-							layers.get(layerIndex).cells, startCell.column, startCell.row, startCell.depth,
-							layers.get(layerIndex).biases.get(filterIndex), false);
+					}	
 
-					// This is the calculated derivative of the out value with respect to net for this cell
-					// IE dout/dnet
-					double doutdnet = cellOut * (1 - cellOut);
 					if (!Double.isNaN(layers.get(layerIndex
 							+ 1).cells[thisConnection.out.depth][thisConnection.out.row][thisConnection.out.column].derivative)) {
 						// If there is a derivative value already stored in the "out" cell for this connection,
 						// use that.
-						sum += (dnetdw * doutdnet * layers.get(layerIndex
+						sum += (dnetdw * layers.get(layerIndex
 								+ 1).cells[thisConnection.out.depth][thisConnection.out.row][thisConnection.out.column].derivative);
 					} else {
 						// Continue to recursively calculate the derivative
-						sum += (dnetdw * doutdnet * computePartialDerivative(layers, out, (layerIndex + 1),
+						sum += (dnetdw * computePartialDerivative(layers, out, (layerIndex + 1),
 								thisConnection.out, expected));
 					}
 
@@ -356,16 +348,6 @@ public class FSONNetwork {
 								throw new Exception("Trying to find a partial derivative with respect to a bias in a maxpool layer. This should never happen!");
 							}
 							
-							// Find the out value of the output cell:
-							double cellOut = Layer.compute(layers.get(layerIndex).filters.get(biasIndex),
-									layers.get(layerIndex).cells, currentConnection.inStart.column,
-									currentConnection.inStart.row, currentConnection.inStart.depth,
-									layers.get(layerIndex).biases.get(biasIndex), false);
-
-							// This is the calculated derivative of the out value with respect to net for this cell.
-							// IE dout/dnet
-							double doutdnet = cellOut * (1 - cellOut);
-							
 							// If this is NOT the last layer,
 							// but there is a derivative value already stored in the "out" cell for this connection...
 							if (!Double.isNaN(layers.get(layerIndex+ 1).cells[currentConnection.out.depth][currentConnection.out.row][currentConnection.out.column].derivative)) {
@@ -376,7 +358,7 @@ public class FSONNetwork {
 								// that means that 1 is the derivative of the net of this output cell 
 								// with respect to this bias(IE dnet/dbias).
 								// So we can ignore dnet/dbias in our calculations.
-								sum += doutdnet * (layers.get(layerIndex + 1).cells[currentConnection.out.depth][currentConnection.out.row][currentConnection.out.column].derivative);
+								sum += layers.get(layerIndex + 1).cells[currentConnection.out.depth][currentConnection.out.row][currentConnection.out.column].derivative;
 							} else {
 
 								// Continue to recursively calculate the derivative
@@ -385,7 +367,7 @@ public class FSONNetwork {
 								// that means that 1 is the derivative of the net of this output cell 
 								// with respect to this bias(IE dnet/dbias).
 								// So we can ignore dnet/dbias in our calculations.
-								sum += (doutdnet * computePartialDerivative(layers, out, (layerIndex + 1), currentConnection.out, expected));
+								sum += computePartialDerivative(layers, out, (layerIndex + 1), currentConnection.out, expected);
 							}
 
 						}
@@ -458,12 +440,16 @@ public class FSONNetwork {
 			
 		} else {
 			
+			// This is the calculated derivative of the out value with respect to net for this cell.
+			// IE dout/dnet
+			double doutdnet = layers.get(layerIndex).cells[outcell.depth][outcell.row][outcell.column].value * (1.0 - layers.get(layerIndex).cells[outcell.depth][outcell.row][outcell.column].value);
+			
 			// This will hold the sum of all relevant partial derivatives;
-			// IE sum(dtotalerror/dnet_i)
+			// IE sum(dtotalerror/dout_i)
 			// where i is all the weights that are applied to this cell,
 			// and total error is the total error of the whole network
 			// with respect to the given expected values in double[] expected.
-			double dEdnet = 0;
+			double dEdout = 0;
 
 			// Find all FilterConnections that use this cell for input:
 
@@ -483,61 +469,75 @@ public class FSONNetwork {
 							&& (currentFilterConnections.get(j).inStart.row <= outcell.row)
 							&& (currentFilterConnections.get(j).inStart.column <= outcell.column)
 							&& ((currentFilterConnections.get(j).inStart.depth
-									+ layers.get(layerIndex).Fdepth) >= outcell.depth)
+									+ layers.get(layerIndex).Fdepth) > outcell.depth)
 							&& ((currentFilterConnections.get(j).inStart.row
-									+ layers.get(layerIndex).Frows) >= outcell.row)
+									+ layers.get(layerIndex).Frows) > outcell.row)
 							&& ((currentFilterConnections.get(j).inStart.column
-									+ layers.get(layerIndex).Fcollumns) >= outcell.column)) {
+									+ layers.get(layerIndex).Fcollumns) > outcell.column)) {
 
 						// Find the derivative of the total error with respect
 						// to the output cell for this connection
+						
+						// Get the value of the weight multiplied by this
+						// cell when this connection is calculated.
+						// This gives us the partial derivative of the net
+						// of the next connection with respect to the 
+						// current cell
+						// (IE our input paramater "outcell")
+						// TODO: Missleading name. Rename variable.
+						double DnetNextDoutThis;
 
-						// If this is the last layer before out...
-						if (layerIndex == (layers.size() - 1)) {
+						// Grab the depth, row, and column in the filter of
+						// the weight multiplied by this cell
+						// when this connection is calculated
+						int depth = (outcell.depth - currentFilterConnections.get(j).inStart.depth);
+						int row = (outcell.row - currentFilterConnections.get(j).inStart.row);
+						int column = (outcell.column - currentFilterConnections.get(j).inStart.column);
 
-							// Grab the depth, row, and column in the filter of
-							// the weight multiplied by this cell
-							// when this connection is calculated
-							int depth = (outcell.depth - currentFilterConnections.get(j).inStart.depth);
-							int row = (outcell.row - currentFilterConnections.get(j).inStart.row);
-							int column = (outcell.column - currentFilterConnections.get(j).inStart.column);
-
-							// Get the value of the weight multiplied by this
-							// cell when this connection is calculated.
-							// This gives us the partial derivative of the net
-							// of the next connection with respect to the 
-							// current cell
-							// (IE our input paramater "outcell")
-							double dnetdw;
-							
-							if (layers.get(layerIndex).type != LayerType.MAXPOOL){
-								if(!Double.isNaN(layers.get(layerIndex).filters.get(i).gradientValues[depth][row][column])){
-							
-									//If this weight has been updated during the current iteration, we need to use the original value
-									dnetdw = layers.get(layerIndex).filters.get(i).previousWeights[depth][row][column];
-									
-								} else {
-									
-									//This is still the original value of this weight for this iteration, so we don't need to use the previous value
-									dnetdw = layers.get(layerIndex).filters.get(i).weights[depth][row][column];
-									
-								}
+						
+						
+						if (layers.get(layerIndex).type != LayerType.MAXPOOL){
+							if(!Double.isNaN(layers.get(layerIndex).filters.get(i).gradientValues[depth][row][column])){
+						
+								//If this weight has been updated during the current iteration, we need to use the original value
+								DnetNextDoutThis = layers.get(layerIndex).filters.get(i).previousWeights[depth][row][column];
 								
 							} else {
-//TODO: finish this!!
-								dnetdw = 1;
+								
+								//This is still the original value of this weight for this iteration, so we don't need to use the previous value
+								DnetNextDoutThis = layers.get(layerIndex).filters.get(i).weights[depth][row][column];
+								
 							}
 							
+						} else {
+							// You're never going to have a maxpool layer as the
+							// last layer, so we don't have to worry about that
+							// here.
+							// Likewise, since an activation function is never
+							// applied to a maxpool output, you don't need to
+							// worry about that either!
+							if (layers.get(layerIndex).cells[outcell.depth][outcell.row][outcell.column].value == layers
+									.get(layerIndex + 1).cells[currentFilterConnections
+											.get(j).out.depth][currentFilterConnections.get(
+													j).out.row][currentFilterConnections.get(j).out.column].value) {
+								DnetNextDoutThis = 1;
+							} else {
+								DnetNextDoutThis = 0;
+							}
+							
+						}
+						
+						// If this is the last layer before out...
+						if (layerIndex == (layers.size() - 1)) {
 							// Add the partial derivative of the total error with respect to the output cell
 							// for this connection to the sum variable
-							dEdnet += (dnetdw * computeSoftmaxError(out, i, expected));
+							dEdout += DnetNextDoutThis * computeSoftmaxError(out, i, expected);
 
 						} else {
-
 							// Recursively calculate the partial derivative of the total
 							// error with respect to the output cell for this
 							// connection and add it to our sum variable
-							dEdnet += computePartialDerivative(layers, out, layerIndex + 1,
+							dEdout += DnetNextDoutThis *computePartialDerivative(layers, out, layerIndex + 1,
 									currentFilterConnections.get(j).out, expected);
 						
 						}
@@ -546,6 +546,7 @@ public class FSONNetwork {
 				}
 			}
 
+			double dEdnet = doutdnet* dEdout;
 			// Record the newly calculated partial derivative
 			layers.get(layerIndex).cells[outcell.depth][outcell.row][outcell.column].derivative = dEdnet;
 			return dEdnet;
@@ -790,15 +791,15 @@ public class FSONNetwork {
 
 						// 2.a) Increment all weights for all the layers, working backward.
 						for (int j = (layers.size() - 1); j >= 0; j--) {
-							System.out.println("----------------------------------------------");
-							System.out.println("Processing layer: " + j);
-							System.out.println("----------------------------------------------");
+						//	System.out.println("----------------------------------------------");
+						//	System.out.println("Processing layer: " + j);
+						//	System.out.println("----------------------------------------------");
 							Layer currentLayer = layers.get(j);
 							
 							if (currentLayer.type!=LayerType.MAXPOOL){
 								// 2.a.i) Increment all weights for all the filters for this layer ("currentLayer")
 								for (int f = 0; f < currentLayer.filters.size(); f++) {
-									System.out.println("Incrementing filter: " + f);
+								//	System.out.println("Incrementing filter: " + f);
 									Filter currentFilter = currentLayer.filters.get(f);
 
 									// 2.a.i.1) Increment each weight within this filter ("currentFilter")
@@ -820,7 +821,7 @@ public class FSONNetwork {
 									// Note that "dictionary[s]" is used because the sth
 									// entry in the dictionary is the expected output for
 									// this input (the "n"th entry in the input at input[s])
-									System.out.println("Incrementing bias: "+ b);
+								//	System.out.println("Incrementing bias: "+ b);
 									currentLayer.biases.get(b).previousValue = currentLayer.biases.get(b).value;
 									currentLayer.biases.get(b).value = stepGradient(learningRate, layers, out, j, b, dictionary[s]);
 								}
@@ -828,9 +829,10 @@ public class FSONNetwork {
 
 						}
 
-						System.out.println("----------------------------------------------");
-						System.out.println("Recording and resetting layers");
-						System.out.println("----------------------------------------------");
+						
+					//	System.out.println("----------------------------------------------");
+					//	System.out.println("Recording and resetting layers");
+					//	System.out.println("----------------------------------------------");
 						// Open a file, using the path created above, to store our progress while learning.
 						// This file can then be used to recover a network if we are interrupted while learning.
 						PrintWriter fw = new PrintWriter(absPath);
@@ -838,9 +840,9 @@ public class FSONNetwork {
 						// 3. Reset stored gradients and write the new weights to the file
 						// 3.a) Reset all stored gradients for all layers
 						for (int j = 0; j < layers.size(); j++) {
-							System.out.println("----------------------------------------------");
-							System.out.println("Recording layer: "+ j);
-							System.out.println("----------------------------------------------");
+						//	System.out.println("----------------------------------------------");
+						//	System.out.println("Recording layer: "+ j);
+						//	System.out.println("----------------------------------------------");
 							// Record this layer
 							fw.write("<layer>\n");
 							
@@ -853,7 +855,7 @@ public class FSONNetwork {
 							// Record the cells of this layer
 							fw.write("<cells>\n");
 							
-							System.out.println("Recording cells");
+						//	System.out.println("Recording cells");
 							// 3.c) Reset all stored gradients for all the cells in this layer, recording their value and derivative first
 							for (int x = 0; x < currentLayer.depth; x++) {
 								for (int y = 0; y < currentLayer.rows; y++) {
@@ -871,7 +873,7 @@ public class FSONNetwork {
 								// 3.a) Reset all stored gradients for all the filters for this layer ("currentLayer")
 								for (int f = 0; f < currentLayer.filters.size(); f++) {
 									Filter currentFilter = currentLayer.filters.get(f);
-									System.out.println("Recording filter: "+f );
+								//	System.out.println("Recording filter: "+f );
 									// Record this filter
 									fw.write("<filter>\n");
 
@@ -900,7 +902,7 @@ public class FSONNetwork {
 
 								// 3.b) Reset all stored gradients for all the biases for this layer, recording their values and derivatives first
 								for (int b = 0; b < currentLayer.biases.size(); b++) {
-									System.out.println("Recording bias: "+b );
+								//	System.out.println("Recording bias: "+b );
 									fw.write("<bias>\n");
 									fw.write(currentLayer.biases.get(b).derivative + "," + currentLayer.biases.get(b).value+"\n");
 									currentLayer.biases.get(b).derivative = Double.NaN;
@@ -919,19 +921,20 @@ public class FSONNetwork {
 						}
 					}
 					
-
+					// Recalculate the total error
+					totalError = crossEntropyTotalError(layers, out, input, dictionary, independent);
+					// Recalculate the learning rate
+					learningRate = Layer.activationFunction(totalError) * learningFactor;
 				}
+				
 			}
 			
-			System.out.println("----------------------------------------------");
-			System.out.println("Recalculating error");
-			System.out.println("----------------------------------------------");
-			// Recalculate the total error
-			totalError = crossEntropyTotalError(layers, out, input, dictionary, independent);
+		//	System.out.println("----------------------------------------------");
+		//	System.out.println("Recalculating error");
+		//	System.out.println("----------------------------------------------");
 			System.out.println("Iteration " + i + " complete. Error is now: " + totalError);
 
-			// Recalculate the learning rate
-			learningRate = Layer.activationFunction(totalError) * learningFactor;
+			
 		}
 	}
 
@@ -1128,15 +1131,15 @@ public class FSONNetwork {
 			switch (currentLayer.type) {
 			case CONV:
 				currentLayer.convolution(currentLayer.cells, currentLayer.filters, nextLayer.cells, currentLayer.step,
-						currentLayer.pad, currentLayer.biases, store);
+						currentLayer.pad, currentLayer.biases, store, true);
 				break;
 			case FULLY:
 				currentLayer.full(currentLayer.cells, currentLayer.filters, nextLayer.cells[0][0], currentLayer.step,
-						currentLayer.pad, currentLayer.biases, store, false);
+						currentLayer.pad, currentLayer.biases, store, true);
 				break;
 			case LOCAL:
 				currentLayer.local(currentLayer.cells, currentLayer.filters, nextLayer.cells, currentLayer.step,
-						currentLayer.pad, currentLayer.biases, store);
+						currentLayer.pad, currentLayer.biases, store, true);
 				break;
 			case MAXPOOL:
 				currentLayer.pool(currentLayer.cells, currentLayer.filters, nextLayer.cells, currentLayer.step,
@@ -1153,7 +1156,7 @@ public class FSONNetwork {
 		// This will always be a fully connected layer.
 		Layer lastLayer = layers.getLast();
 		lastLayer.full(lastLayer.cells, lastLayer.filters, out, lastLayer.step, lastLayer.pad, lastLayer.biases, store,
-				true);
+				false);
 
 	}
 
@@ -1203,8 +1206,6 @@ public class FSONNetwork {
 		
 		double sum = 0;
 
-		double count = 0;
-		
 		// For each example in the training data...
 		for (int i = 0; i < input.length; i++) {
 
@@ -1214,7 +1215,6 @@ public class FSONNetwork {
 				String[] inputs = input[i].split(",");
 				int numInputs = inputs.length;
 				for (int n = 0; n<numInputs; n++){
-					count++;
 					// Open that example and feed it through the network:
 					// If the first layer only has a depth of 1, that means the input is
 					// supposed to be black and white, so use the appropriate function
@@ -1269,7 +1269,7 @@ public class FSONNetwork {
 
 		}
 		// Multiply sum by -1/n, where n is the number of examples in the training data
-		double error = (sum * (0 - (1 / (double) (count))));
+		double error = (sum * (0 - (1)));
 
 		return error;
 	}
@@ -1922,6 +1922,102 @@ public class FSONNetwork {
 		
 	}
 
+	public static FSONNetwork patternNetwork() {
+		
+		FSONNetwork pn = new FSONNetwork();
 
-	
+		// Create the second layer.
+		Layer l0 = new Layer(15, 15, 3, 5, 5, 3, 3, 1, 0, LayerType.CONV);
+		l0.initLayer();
+
+		// Create the second layer.
+		Layer l1 = new Layer(11, 11, 3, 4, 4, 3, 3, 1, 0, LayerType.CONV);
+		l1.initLayer();
+
+		// Create the second layer.
+		Layer l2 = new Layer(8, 8, 3, 3, 3, 3, 108, 1, 0, LayerType.MAXPOOL);
+		l2.initLayer();
+
+		// Create and initialize the third layer.
+		Layer l3 = new Layer(6, 6, 3, 2 , 2, 3, 9, 2, 0, LayerType.LOCAL);
+		l3.initLayer();
+
+		// Create and initialize the fourth layer.
+		Layer l4 = new Layer(3, 3, 1, 3, 3, 1, 1, 1, 0, LayerType.FULLY);
+		l4.initLayer();
+		
+
+		// This is the last "layer": this will hold the output of the network
+		pn.out = new Cell[1];
+
+		// Initialize the cells because java won't do it for you
+		pn.out[0] = new Cell();
+
+		// Initialize the list of layers
+		pn.layers = new LinkedList<Layer>();
+
+		// Add each layer at the appropriate place in the list.
+		pn.layers.add(0, l0);
+		pn.layers.add(1, l1);
+		pn.layers.add(2, l2);
+		pn.layers.add(3, l3);
+		pn.layers.add(4, l4);
+		
+		return pn;
+	}
+
+	public void learnPattern() throws Exception{
+		
+		// This array will hold the filenames of the pictures of each input file, 
+		String[] learnInput = new String[14];
+		
+		for (int i=0; i<14; i++){
+			String filename = "testingInput/patterns/easy/"+i+".jpg";
+			learnInput[i] = filename;
+		}
+		
+		
+		// This is the dictionary used to tell the learning functions what the ideal
+		// output for a picture of that person would look like
+		double[][] dictionary = new double[14][1];
+		
+		// Given an index, "dictionary[x][y]", 
+		// x is the index in the list of names of the person the input represents
+		// and y is the array of output we would expect to see in a perfectly trained network.
+		dictionary[0][0] = 0.0;
+		dictionary[1][0] = 0.0;
+		dictionary[2][0] = 0.0;
+		dictionary[3][0] = 0.0;
+		dictionary[4][0] = 0.0;
+		dictionary[5][0] = 0.0;
+		dictionary[6][0] = 1.0;
+		dictionary[7][0] = 0.0;
+		dictionary[8][0] = 0.0;
+		dictionary[9][0] = 1.0;
+		dictionary[10][0] = 1.0;
+		dictionary[11][0] = 0.0;
+		dictionary[12][0] = 0.0;
+		dictionary[13][0] = 1.0;
+		
+		FSONNetwork.openFileInput(layers, learnInput[0]);
+		
+//		double test[][][]= new double[layers.getFirst().depth][layers.getFirst().rows][layers.getFirst().collumns];
+//		// Depth
+//		for (int l = 0; l < layers.getFirst().depth; l++) {
+//			// Row
+//			for (int j = 0; j < layers.getFirst().rows; j++) {
+//				// Column
+//				for (int k = 0; k < layers.getFirst().collumns; k++) {
+//					test[l][j][k]= layers.getFirst().cells[l][j][k].value;
+//				}
+//			}
+//		}
+		
+		FSONNetwork.feedForward(layers, out, true);
+		
+		// Use the learning function to learn using our newly processed input and newly created dictionary.
+		// Use the file "testlearnlfw.txt" to store our progress while learning.
+		learn(1, this.layers, this.out, learnInput, 1000, dictionary, true, "testlearnpattern.txt");
+		
+	}
 }

@@ -220,7 +220,7 @@ public class TestCNNFullFunction {
 
 	@Test
 	public void test() throws Exception {
-		testLayer.full(testLayer.cells, testLayer.filters, testOut, 1, 0, testLayer.biases, true, false);
+		testLayer.full(testLayer.cells, testLayer.filters, testOut, 1, 0, testLayer.biases, true, true);
 
 		//This is an array of values we expect to see in testOut
 		double[] temp = new double[3];

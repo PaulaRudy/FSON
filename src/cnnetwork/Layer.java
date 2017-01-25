@@ -80,10 +80,10 @@ public class Layer {
 	}
 
 	/**
-	 * This function computes a single output value. Previous values are used
-	 * if any of the input values have already been updated in this session
-	 * of backpropagation (if that paticular value has a partial derivative 
-	 * already stored).
+	 * This function computes a single output value. Previous values are used if
+	 * any of the input values have already been updated in this session of
+	 * backpropagation (if that paticular value has a partial derivative already
+	 * stored).
 	 * 
 	 * @param filter
 	 *            a three dimensional filter to apply
@@ -101,19 +101,18 @@ public class Layer {
 	 *            filter to
 	 * @param bias
 	 *            the bias to be used in this computation.
-	 * @param lastLayer
-	 *            A boolean indicating if this computation's result will be used
-	 *            for the last layer or not. A "true" value here indicates that
-	 *            this computation's result will be used to calculate the values
-	 *            of the "out" layer, and so should not use the activation
-	 *            function.
+	 * @param applyActivation
+	 *            A boolean indicating if the sigmoid activation function is to
+	 *            be applied to the resulting value. A "true" value here
+	 *            indicates that this computation's result will use the
+	 *            activation function.
 	 * @return the newly computed value to be stored into the next layer.
 	 * @throws Exception
 	 *             Thrown when the activation function does not return a number
 	 *             (see activationFunction()).
 	 */
 	public static double compute(Filter filter, Cell[][][] input, int column, int row, int depth, Cell bias,
-			boolean lastLayer) throws Exception {
+			boolean applyActivation) throws Exception {
 		double result = 0.0;
 
 		// For every cell in the input array, using depth, row, and column as
@@ -148,7 +147,7 @@ public class Layer {
 		// If the result of this computation isn't going to be stored in the
 		// output of this network (if the input array is not from the last layer
 		// before "out")...
-		if (!lastLayer) {
+		if (applyActivation) {
 			// Use the activation function to determine actual value (limited between 0 and 1).
 			result = activationFunction(result);
 		}
@@ -227,12 +226,17 @@ public class Layer {
 	 *            structure needs to be recorded. A false value here means this
 	 *            is network is already set up and does not need to record
 	 *            connections (no connections will be recorded in this call).
+	 * @param applyActivation
+	 *            A boolean indicating if the sigmoid activation function is to
+	 *            be applied to the resulting values during the computations. A
+	 *            "true" value here indicates that the activation function will
+	 *            be used.
 	 * @throws Exception
 	 *             Thrown when the activation function does not return a number
 	 *             (see activationFunction()).
 	 */
 	public void convolution(Cell[][][] input, LinkedList<Filter> filters, Cell[][][] output, int step, int padding,
-			LinkedList<Cell> biases, boolean store) throws Exception {
+			LinkedList<Cell> biases, boolean store, boolean applyActivation) throws Exception {
 
 		// For every filter and bias in the list
 		for (int l = 0; l < filters.size(); l++) {
@@ -248,7 +252,7 @@ public class Layer {
 				for (int k = 0; (k + filters.get(0).weights[0][0].length) <= input[0][0].length; k += step) {
 
 					output[l][(j / step)][(k / step)].value = compute(filters.get(l), input, k, j, 0, biases.get(l),
-							false);
+							applyActivation);
 
 					// If this is a new network...
 					if (store) {
@@ -349,12 +353,17 @@ public class Layer {
 	 *            structure needs to be recorded. A false value here means this
 	 *            is network is already set up and does not need to record
 	 *            connections (no connections will be recorded in this call).
+	 * @param applyActivation
+	 *            A boolean indicating if the sigmoid activation function is to
+	 *            be applied to the resulting values during the computations. A
+	 *            "true" value here indicates that the activation function will
+	 *            be used.
 	 * @throws Exception
 	 *             Thrown when the activation function does not return a number
 	 *             (see activationFunction()).
 	 */
 	public void local(Cell[][][] input, LinkedList<Filter> filters, Cell[][][] output, int step, int padding,
-			LinkedList<Cell> biases, boolean store) throws Exception {
+			LinkedList<Cell> biases, boolean store, boolean applyActivation) throws Exception {
 
 		int filterNum = 0;// This is used to iterate over the list of filters ("filters") and biases ("biases").
 
@@ -369,7 +378,7 @@ public class Layer {
 				// Column
 				for (int k = 0; (k + filters.get(0).weights[0][0].length) <= input[0][0].length; k += step) {
 					output[l][(j / step)][(k / step)].value = compute(filters.get(filterNum), input, k, j, l,
-							biases.get(filterNum), false);
+							biases.get(filterNum), applyActivation);
 
 					// If this is a new network...
 					if (store) {
@@ -415,24 +424,23 @@ public class Layer {
 	 *            structure needs to be recorded. A false value here means this
 	 *            is network is already set up and does not need to record
 	 *            connections (no connections will be recorded in this call).
-	 * @param lastLayer
-	 *            A boolean indicating if this computation's result will be used
-	 *            for the last layer or not. A "true" value here indicates that
-	 *            this computation's result will be used to calculate the values
-	 *            of the "out" layer, and so the activation function should not
+	 * @param applyActivation
+	 *            A boolean indicating if the sigmoid activation function is to
+	 *            be applied to the resulting values during the computations. A
+	 *            "true" value here indicates that the activation function will
 	 *            be used.
 	 * @throws Exception
 	 *             Thrown when the activation function does not return a number
 	 *             (see activationFunction()).
 	 */
 	public void full(Cell[][][] input, LinkedList<Filter> filters, Cell[] output, int step, int padding,
-			LinkedList<Cell> biases, boolean store, boolean lastLayer) throws Exception {
+			LinkedList<Cell> biases, boolean store, boolean applyActivation) throws Exception {
 		// Apply each filter to the input.
 		// Because this is a fully connected layer, each filter is applied to the entire input array,
 		// so we do not need to iterate over the input 
 		// (the "compute" function will iterate through the full depth of the filter).
 		for (int f = 0; f < filters.size(); f++) {
-			output[f].value = compute(filters.get(f), input, 0, 0, 0, biases.get(f), lastLayer);
+			output[f].value = compute(filters.get(f), input, 0, 0, 0, biases.get(f), applyActivation);
 
 			// If this is a new network...
 			if (store) {

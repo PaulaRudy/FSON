@@ -204,7 +204,7 @@ public class TestCNNConvolutionFunction {
 
 	@Test
 	public void test() throws Exception {
-		testLayer.convolution(testLayer.cells, testLayer.filters, testOut, 1, 0, testLayer.biases, true);
+		testLayer.convolution(testLayer.cells, testLayer.filters, testOut, 1, 0, testLayer.biases, true, true);
 
 		//This is an array of values we expect to see in testOut
 		double[][][] temp = new double[4][2][2];

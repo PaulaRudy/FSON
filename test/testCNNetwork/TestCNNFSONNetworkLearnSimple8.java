@@ -12,7 +12,8 @@ import cnnetwork.FSONNetwork;
 import cnnetwork.Layer;
 import cnnetwork.LayerType;
 
-public class TestCNNFSONNetworkLearnSimple5 {
+public class TestCNNFSONNetworkLearnSimple8 {
+
 	LinkedList<Layer> layers;
 	Cell[] out;
 	double[] expect;
@@ -23,10 +24,10 @@ public class TestCNNFSONNetworkLearnSimple5 {
 		// Create the list of layers that will make up our network
 		layers = new LinkedList<Layer>();
 		
-		Layer l0 = new Layer(8,8,1,2,2,1,16,2,0, LayerType.LOCAL);
+		Layer l0 = new Layer(4,4,1,2,2,1,4,2,0, LayerType.LOCAL);
 		l0.initLayer();
 		
-		Layer l1 = new Layer(4,4,1,2,2,1,4,2,0, LayerType.MAXPOOL);
+		Layer l1 = new Layer(2,2,1,1,1,1,1,1,0, LayerType.CONV);
 		l1.initLayer();
 
 		// Create and initialize the second layer
@@ -55,6 +56,18 @@ public class TestCNNFSONNetworkLearnSimple5 {
 		// the output cells are independant of one another. 
 		out[0].value = Layer.activationFunction(out[0].value);
 		out[1].value = Layer.activationFunction(out[1].value);
+		
+		double test[][][]= new double[layers.getFirst().depth][layers.getFirst().rows][layers.getFirst().collumns];
+		// Depth
+		for (int l = 0; l < layers.getFirst().depth; l++) {
+			// Row
+			for (int j = 0; j < layers.getFirst().rows; j++) {
+				// Column
+				for (int k = 0; k < layers.getFirst().collumns; k++) {
+					test[l][j][k]= layers.getFirst().cells[l][j][k].value;
+				}
+			}
+		}
 		
 		// Set up the input array (an array of the filenames of the input files,
 		// located from the root directory of the project).
@@ -94,10 +107,8 @@ public class TestCNNFSONNetworkLearnSimple5 {
 		dictionary[7][1] = 1;
 		dictionary[8][1] = 0;
 		dictionary[9][1] = 0;
-		
 		// Actually call the learning function.
-		FSONNetwork.learn(1, layers, out, input, 500, dictionary, true, "TestCNNFSONNetworkLearnSimple2");
-
+		FSONNetwork.learn(1, layers, out, input, 100, dictionary, true, "TestCNNFSONNetworkLearnSimple8");
 	}
 
 	/**
@@ -144,4 +155,5 @@ public class TestCNNFSONNetworkLearnSimple5 {
 				
 
 	}
+
 }

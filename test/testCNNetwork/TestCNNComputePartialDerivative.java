@@ -56,9 +56,9 @@ public class TestCNNComputePartialDerivative {
 		// Do a forward pass through the network to set up the connections
 		// needed for backpropagation
 		layers.get(0).convolution(layers.get(0).cells, layers.get(0).filters, layers.get(1).cells, layers.get(0).step,
-				layers.get(0).pad, layers.get(0).biases, true);
+				layers.get(0).pad, layers.get(0).biases, true, true);
 		layers.get(1).full(layers.get(1).cells, layers.get(1).filters, out, layers.get(1).step, layers.get(1).pad,
-				layers.get(1).biases, true, true);
+				layers.get(1).biases, true, false);
 		Layer.softmax(out);
 
 		// Set up the array that will hold the expected values of the cells in

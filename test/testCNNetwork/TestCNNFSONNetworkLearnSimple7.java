@@ -12,7 +12,7 @@ import cnnetwork.FSONNetwork;
 import cnnetwork.Layer;
 import cnnetwork.LayerType;
 
-public class TestCNNFSONNetworkLearnSimple5 {
+public class TestCNNFSONNetworkLearnSimple7 {
 	LinkedList<Layer> layers;
 	Cell[] out;
 	double[] expect;
@@ -23,20 +23,24 @@ public class TestCNNFSONNetworkLearnSimple5 {
 		// Create the list of layers that will make up our network
 		layers = new LinkedList<Layer>();
 		
-		Layer l0 = new Layer(8,8,1,2,2,1,16,2,0, LayerType.LOCAL);
+		Layer l0 = new Layer(8,8,1,1,1,1,1,1,0, LayerType.CONV);
 		l0.initLayer();
 		
-		Layer l1 = new Layer(4,4,1,2,2,1,4,2,0, LayerType.MAXPOOL);
+		Layer l1 = new Layer(8,8,1,2,2,1,16,2,0, LayerType.MAXPOOL);
 		l1.initLayer();
+		
+		Layer l2 = new Layer(4,4,1,2,2,1,4,2,0, LayerType.LOCAL);
+		l2.initLayer();
 
 		// Create and initialize the second layer
-		Layer l2 = new Layer(2, 2, 1, 2, 2, 1, 2, 1, 0, LayerType.FULLY);
-		l2.initLayer();
+		Layer l3 = new Layer(2, 2, 1, 2, 2, 1, 2, 1, 0, LayerType.FULLY);
+		l3.initLayer();
 
 		// Add the layers to the list
 		layers.add(0, l0);
 		layers.add(1, l1);
 		layers.add(2, l2);
+		layers.add(3, l3);
 
 		// Create and initialize the array of Cell that will hold the output of
 		// this network.
@@ -96,7 +100,7 @@ public class TestCNNFSONNetworkLearnSimple5 {
 		dictionary[9][1] = 0;
 		
 		// Actually call the learning function.
-		FSONNetwork.learn(1, layers, out, input, 500, dictionary, true, "TestCNNFSONNetworkLearnSimple2");
+		FSONNetwork.learn(0.5, layers, out, input, 500, dictionary, true, "TestCNNFSONNetworkLearnSimple7");
 
 	}
 

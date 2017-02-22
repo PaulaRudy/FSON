@@ -1,12 +1,8 @@
 package cnnetwork;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -735,7 +731,13 @@ public class FSONNetwork {
 		System.out.println("Starting learning. Error is: " + totalError);
 
 		// Calculate the starting learning rate using the starting error and the learningFactor parameter
-		double learningRate = Layer.activationFunction(totalError) * learningFactor;
+		double learningRate;
+		
+		if (totalError == Double.NEGATIVE_INFINITY){
+			learningRate = learningFactor;
+		} else{
+			learningRate = Layer.activationFunction(totalError) * learningFactor;
+		}
 
 		// For the requested number of iterations...
 		for (int i = 0; i < iterations; i++) {
@@ -771,8 +773,9 @@ public class FSONNetwork {
 						} else { // If the first layer has more than a single depth,
 							// that means it is expecting an image with multiple
 							// channels, so use the appropriate function to open
-							// it
-							openFileInput(layers, inputs[n]);
+							// it.
+							// TODO: add option to change this? Change this to RGB (must fix color network if so)?
+							openHSVFileInput(layers, inputs[n]);
 						}
 
 						// 1.b.ii) Feed the input through the rest of the network
@@ -791,15 +794,15 @@ public class FSONNetwork {
 
 						// 2.a) Increment all weights for all the layers, working backward.
 						for (int j = (layers.size() - 1); j >= 0; j--) {
-						//	System.out.println("----------------------------------------------");
-						//	System.out.println("Processing layer: " + j);
-						//	System.out.println("----------------------------------------------");
+//							System.out.println("----------------------------------------------");
+//							System.out.println("Processing layer: " + j);
+//							System.out.println("----------------------------------------------");
 							Layer currentLayer = layers.get(j);
 							
 							if (currentLayer.type!=LayerType.MAXPOOL){
 								// 2.a.i) Increment all weights for all the filters for this layer ("currentLayer")
 								for (int f = 0; f < currentLayer.filters.size(); f++) {
-								//	System.out.println("Incrementing filter: " + f);
+//									System.out.println("Incrementing filter: " + f);
 									Filter currentFilter = currentLayer.filters.get(f);
 
 									// 2.a.i.1) Increment each weight within this filter ("currentFilter")
@@ -821,7 +824,7 @@ public class FSONNetwork {
 									// Note that "dictionary[s]" is used because the sth
 									// entry in the dictionary is the expected output for
 									// this input (the "n"th entry in the input at input[s])
-								//	System.out.println("Incrementing bias: "+ b);
+//									System.out.println("Incrementing bias: "+ b);
 									currentLayer.biases.get(b).previousValue = currentLayer.biases.get(b).value;
 									currentLayer.biases.get(b).value = stepGradient(learningRate, layers, out, j, b, dictionary[s]);
 								}
@@ -830,9 +833,9 @@ public class FSONNetwork {
 						}
 
 						
-					//	System.out.println("----------------------------------------------");
-					//	System.out.println("Recording and resetting layers");
-					//	System.out.println("----------------------------------------------");
+//						System.out.println("----------------------------------------------");
+//						System.out.println("Recording and resetting layers");
+//						System.out.println("----------------------------------------------");
 						// Open a file, using the path created above, to store our progress while learning.
 						// This file can then be used to recover a network if we are interrupted while learning.
 						PrintWriter fw = new PrintWriter(absPath);
@@ -840,9 +843,9 @@ public class FSONNetwork {
 						// 3. Reset stored gradients and write the new weights to the file
 						// 3.a) Reset all stored gradients for all layers
 						for (int j = 0; j < layers.size(); j++) {
-						//	System.out.println("----------------------------------------------");
-						//	System.out.println("Recording layer: "+ j);
-						//	System.out.println("----------------------------------------------");
+//							System.out.println("----------------------------------------------");
+//							System.out.println("Recording layer: "+ j);
+//							System.out.println("----------------------------------------------");
 							// Record this layer
 							fw.write("<layer>\n");
 							
@@ -855,7 +858,7 @@ public class FSONNetwork {
 							// Record the cells of this layer
 							fw.write("<cells>\n");
 							
-						//	System.out.println("Recording cells");
+//							System.out.println("Recording cells");
 							// 3.c) Reset all stored gradients for all the cells in this layer, recording their value and derivative first
 							for (int x = 0; x < currentLayer.depth; x++) {
 								for (int y = 0; y < currentLayer.rows; y++) {
@@ -873,7 +876,7 @@ public class FSONNetwork {
 								// 3.a) Reset all stored gradients for all the filters for this layer ("currentLayer")
 								for (int f = 0; f < currentLayer.filters.size(); f++) {
 									Filter currentFilter = currentLayer.filters.get(f);
-								//	System.out.println("Recording filter: "+f );
+//									System.out.println("Recording filter: "+f );
 									// Record this filter
 									fw.write("<filter>\n");
 
@@ -902,7 +905,7 @@ public class FSONNetwork {
 
 								// 3.b) Reset all stored gradients for all the biases for this layer, recording their values and derivatives first
 								for (int b = 0; b < currentLayer.biases.size(); b++) {
-								//	System.out.println("Recording bias: "+b );
+//									System.out.println("Recording bias: "+b );
 									fw.write("<bias>\n");
 									fw.write(currentLayer.biases.get(b).derivative + "," + currentLayer.biases.get(b).value+"\n");
 									currentLayer.biases.get(b).derivative = Double.NaN;
@@ -924,15 +927,24 @@ public class FSONNetwork {
 					// Recalculate the total error
 					totalError = crossEntropyTotalError(layers, out, input, dictionary, independent);
 					// Recalculate the learning rate
-					learningRate = Layer.activationFunction(totalError) * learningFactor;
+					if (totalError == Double.NEGATIVE_INFINITY){
+						learningRate = learningFactor;
+					} else{
+						learningRate = Layer.activationFunction(totalError) * learningFactor;
+					}
+					
 				}
 				
 			}
 			
-		//	System.out.println("----------------------------------------------");
-		//	System.out.println("Recalculating error");
-		//	System.out.println("----------------------------------------------");
-			System.out.println("Iteration " + i + " complete. Error is now: " + totalError);
+//			System.out.println("----------------------------------------------");
+//			System.out.println("Recalculating error");
+//			System.out.println("----------------------------------------------");
+		
+			if(i%5 == 0){
+				System.out.println("Iteration " + i + " complete. Error is now: " + totalError);
+			}
+			
 
 			
 		}
@@ -1020,6 +1032,106 @@ public class FSONNetwork {
 					value = (value-127.5)/25.5;
 					layers.get(0).cells[c][d][e].value = Layer.activationFunction(value);
 					
+				}
+
+			}
+
+		}
+	}
+	
+	/**
+	 * This function opens a single file (indicated by the filename passed in as
+	 * a string), and feeds that file as input into the first layer of the
+	 * network. Input files are expected to be in color and in .jpg form.
+	 * Color format is HSV, where all values range from 0 to 1 (inclusive).
+	 * 
+	 * @param layers
+	 *            The layers that make up this network
+	 * @param filename
+	 *            The filename of the file to be opened/used, in string form.
+	 *            Note that the file must be in the root directory of this
+	 *            project.
+	 * @throws Exception
+	 *             This exception is thrown when a problem occurs while
+	 *             calculating the activation function for a cell. See
+	 *             Layer::activationFunction() for more details.
+	 * @throws IOException
+	 *             Thrown if there is a problem locating or opening the file for
+	 *             input.
+	 */
+	public static void openHSVFileInput(LinkedList<Layer> layers, String filename) throws Exception {
+		
+		// Grab the location of this class file in the filesystem
+		URL location = FSONNetwork.class.getProtectionDomain().getCodeSource().getLocation();
+
+		String urlString = location.toString();
+
+		// Chop the end off the string,
+		// resulting in the filepath of the root of this project
+		String substr = urlString.substring(5, (urlString.length() - 4));
+
+		// Add the filename to the end of the path.
+		// Now we have the absolute path of a file located in the root directory
+		// of this project
+		String absPath = substr.concat(filename);
+		
+//		System.out.println("Reading: "+absPath);
+
+		// This is necessary to use any of the OpenCV functions
+		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+
+		// Actually read the file into a Mat object
+		Mat img = Highgui.imread(absPath, 1);
+
+		// "imread" fails silently,
+		// so be sure to check the file to make sure it was read successfully.
+		if (img.cols() == 0) {
+			throw new IOException("Error reading file: "+ filename);
+		}
+
+		// This is necessary to use any of the OpenCV functions
+		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+
+		// Resize the image to the size needed.
+		Mat resizedImage = new Mat();
+		Size sz = new Size(layers.get(0).collumns, layers.get(0).rows);
+		Imgproc.resize(img, resizedImage, sz);
+		
+		//Convert the Mat into HSV form
+		Mat hsvMat = new Mat();
+		Imgproc.cvtColor(resizedImage, hsvMat, Imgproc.COLOR_BGR2HSV);
+
+		// Split the image into desired number of color channels
+		List<Mat> channels = new ArrayList<Mat>(3);// Channels are stored here in the order RGB
+		Core.split(hsvMat, channels);
+
+		// For each channel...
+		for (int c = 0; c < channels.size(); c++) {
+
+			// Feed the individual pixel values into a temporary array...
+			channels.get(c).convertTo(channels.get(c), CvType.CV_64FC3);
+			int size = (int) (channels.get(c).total() * channels.get(c).channels());
+			double[] temp = new double[size];
+			channels.get(c).get(0, 0, temp);
+
+			// ...and then into the cells of the first layer of the network.
+			for (int d = 0; d < layers.get(0).rows; d++) {
+				for (int e = 0; e < layers.get(0).collumns; e++) {
+					
+					// In OpenCV's  HSV, Hue range is [0,179], Saturation range is 
+					// [0,255] and Value range is [0,255].
+					// Since the network is expecting a value between 0 and 1, some
+					// formatting of the data is required.
+					double value = temp[(d * layers.get(0).rows) + e];
+					if (c == 0){ //If we are processing the Hue channel...
+						value /= 179.0;
+					} else {
+						// For now, discard the Saturation and Value information.
+						// TODO: finish this.
+						value = 0;
+					}
+					
+					layers.get(0).cells[c][d][e].value = value;
 				}
 
 			}
@@ -1205,6 +1317,7 @@ public class FSONNetwork {
 			double[][] dictionary, boolean independent) throws Exception {
 		
 		double sum = 0;
+		int count = 0;
 
 		// For each example in the training data...
 		for (int i = 0; i < input.length; i++) {
@@ -1215,6 +1328,7 @@ public class FSONNetwork {
 				String[] inputs = input[i].split(",");
 				int numInputs = inputs.length;
 				for (int n = 0; n<numInputs; n++){
+					count++;
 					// Open that example and feed it through the network:
 					// If the first layer only has a depth of 1, that means the input is
 					// supposed to be black and white, so use the appropriate function
@@ -1224,7 +1338,8 @@ public class FSONNetwork {
 					} else { // If the first layer has more than a single depth, that
 								// means it is expecting an image with multiple
 								// channels, so use the appropriate function to open it
-						openFileInput(layers, inputs[n]);
+								// TODO: Change this? (if so, fix colorNetwork) Add option for this?
+						openHSVFileInput(layers, inputs[n]);
 					}
 					
 					// Feed the input through the network (conduct a forward pass)
@@ -1244,24 +1359,28 @@ public class FSONNetwork {
 						// Add y*ln(x) + (1-y)*ln(1-x) to the sum,
 						// where y is the expected value for this cell
 						// and x is the actual value for this cell
+						// TODO: Should probably comment this section better.
+						if (out[k].value != dictionary[i][k]) {
 							double log;
-							if (out[k].value == 0){
-								log = Double.NEGATIVE_INFINITY;
-							}else{
+							if ((out[k].value == 0) && (dictionary[i][k] != 0)) {
+								sum = Double.NEGATIVE_INFINITY;
+								return sum;
+							} else {
 								log = Math.log(out[k].value);
 							}
-							
+
 							double oneMinusLog;
-							
-							if (out[k].value == 1){
-								oneMinusLog = Double.NEGATIVE_INFINITY;
-				
-							} else{
+
+							if ((out[k].value == 1) && (dictionary[i][k] != 1)) {
+								sum = Double.NEGATIVE_INFINITY;
+								return sum;
+
+							} else {
 								oneMinusLog = Math.log(1 - out[k].value);
 							}
-							
-							sum += (dictionary[i][k] * log)
-									+ ((1 - dictionary[i][k]) * oneMinusLog);
+
+							sum += (dictionary[i][k] * log) + ((1 - dictionary[i][k]) * oneMinusLog);
+						}
 
 					}
 				}
@@ -1269,7 +1388,7 @@ public class FSONNetwork {
 
 		}
 		// Multiply sum by -1/n, where n is the number of examples in the training data
-		double error = (sum * (0 - (1)));
+		double error = (sum * (0.0 - (1.0)))/(double) count;
 
 		return error;
 	}
@@ -1307,717 +1426,159 @@ public class FSONNetwork {
 	}
 	
 	/**
-	 * This function sets up the input for learning using data provided by 
-	 * Labled Faces in the Wild (http://vis-www.cs.umass.edu/lfw/).
-	 * It creates an array the length of the total number of names in the 
-	 * LFW data set, with a comma seperated list of filenames of known images of 
-	 * each person to use for learning.
-	 * The master list of names is read from the file lfw_all_names.txt in the root
-	 * directory of this project. 
+	 * This function creates, initializes, and returns a sample network
+	 * designed to recognize color.
 	 * 
-	 * @throws Exception An exception is thrown if an error during file IO is encountered
+	 * The network has an output array of 9 doubles, each representing the
+	 * probability that the input color corresponds to the 8 colors:
+	 * 
+	 * Red, Orange, Yellow, Green, Aqua (blue/green), Blue, Purple,
+	 * and Pink (fuscha). 
+	 * 
+	 * (in that order)
+	 * 
+	 * The last element in the array also corresponds to red; This is an 
+	 * artifact of the arrangement of the Hue, where both 0 and 360 
+	 * correspond to the same canonical red.
+	 * 
+	 * Please note that the saturation and value (IE "brightness") are
+	 * disregarded (this means that the colors "white", "black", and 
+	 * "grey" are not recognized).
+	 * 
+	 * Please also note that the input layer takes only a single cell 
+	 * (of depth 3, corresponding to Hue, Saturation, and Value, in that
+	 * order) as input, so any colors detected will be the average of
+	 * all colors in the input image.
+	 * 
+	 * @return A sample color-recognition network, initialized but untrained.
 	 */
-	public void learnLFW() throws Exception{
+	public static FSONNetwork colorNetwork() {
 		
-		String[] learnInput = readInLFWData();
-		
-		// This is the dictionary used to tell the learning functions what the ideal
-		// output for a picture of that person would look like
-		double[][] dictionary = new double[5749][5749];
-		
-		// Since each entry in the array corresponds to a different person
-		// that means that the ideal output would be an array of all 0s
-		// except for the entry at that person's index.
-		// Since java initializes arrays to 0 by default, that means that
-		// all we need to do is set the "1"
-		for(int k = 0; k <dictionary.length; k++){
-			dictionary[k][k] =1;
-		}
-		
-		// Use the learning function to learn using our newly processed input and newly created dictionary.
-		// Use the file "testlearnlfw.txt" to store our progress while learning.
-		learn(1, this.layers, this.out, learnInput, 1, dictionary, false, "testlearnlfw.txt");
-		
-	}
+		FSONNetwork cn = new FSONNetwork();
 
-	public static FSONNetwork simpleNetwork() {
-		
-		FSONNetwork sn = new FSONNetwork();
-
-		// Declare and initialize the first layer
-		Layer l1 = new Layer(12, 12, 3, 4, 4, 3, 3, 1, 0, LayerType.CONV);
-
-		// Setup the layer. This creates and initializes the filters and biases, all filter weights with a value of 0.5, all biases with a value of 0.
-		l1.initLayer();
-
-		// Create the second layer.
-		Layer l2 = new Layer(10, 10, 3, 2, 2, 1, 75, 2, 0, LayerType.MAXPOOL);
-		l2.initLayer();
-
-		// Create and initialize the third layer.
-		Layer l3 = new Layer(5, 5, 3, 3, 3, 3, 9, 1, 0, LayerType.LOCAL);
-		l3.initLayer();
-
-		// Create and initialize the fourth layer.
-		Layer l4 = new Layer(3, 3, 1, 3, 3, 1, 5, 1, 0, LayerType.FULLY);
-		l4.initLayer();
-
-		// This is the last "layer": this will hold the output of the network
-		sn.out = new Cell[5];
-
-		// Initialize the cells because java won't do it for you
-		for (int i = 0; i < 5; i++) {
-			sn.out[i] = new Cell();
-		}
-
-		// Initialize the list of layers
-		sn.layers = new LinkedList<Layer>();
-
-		// Add each layer at the appropriate place in the list.
-		sn.layers.add(0, l1);
-		sn.layers.add(1, l2);
-		sn.layers.add(2, l3);
-		sn.layers.add(3, l4);
-
-		return sn;
-	}
-	
-	public void learnLFWSimple() throws Exception{
-		
-		String[] learnInput = readInLFWData();
-		
-		// This is the dictionary used to tell the learning functions what the ideal
-		// output for a picture of that person would look like
-		double[][] dictionary = new double[5749][5];
-		
-		// Given an index, "dictionary[x][y]", 
-		// x is the index in the list of names of the person the input represents
-		// and y is the array of output we would expect to see in a perfectly trained network.
-		// Since this is a simplified version, this networks "out" array is only 5 cells long,
-		// so we can't expect it to recognize all the faces. 
-		// So I've given it 4 faces to recognize and a 5th cell to indicate the input does
-		// not represent any of those four faces.
-		for(int k = 0; k <dictionary.length; k++){
-			switch (k) {
-			case 5:
-				//"Aaron_Peirsol"
-				dictionary[k][0] = 1;
-				dictionary[k][1] = 0;
-				dictionary[k][2] = 0;
-				dictionary[k][3] = 0;
-				dictionary[k][4] = 0;
-				break;
-			case 36:
-				//"Adam_Sandler"
-				dictionary[k][0] = 0;
-				dictionary[k][1] = 1;
-				dictionary[k][2] = 0;
-				dictionary[k][3] = 0;
-				dictionary[k][4] = 0;
-				break;
-			case 118:
-				//"Alec_Baldwin"
-				dictionary[k][0] = 0;
-				dictionary[k][1] = 0;
-				dictionary[k][2] = 1;
-				dictionary[k][3] = 0;
-				dictionary[k][4] = 0;
-				break;
-			case 222:
-				//"Amelia_Vega"
-				dictionary[k][0] = 0;
-				dictionary[k][1] = 0;
-				dictionary[k][2] = 0;
-				dictionary[k][3] = 1;
-				dictionary[k][4] = 0;
-				break;
-				default:
-					//A person that is not one of the above 4 people
-					dictionary[k][0] = 0;
-					dictionary[k][1] = 0;
-					dictionary[k][2] = 0;
-					dictionary[k][3] = 0;
-					dictionary[k][4] = 1;
-					break;
-			
-			}
-		}
-		
-		// Use the learning function to learn using our newly processed input and newly created dictionary.
-		// Use the file "testlearnlfw.txt" to store our progress while learning.
-		learn(1, this.layers, this.out, learnInput, 100, dictionary, false, "testlearnlfwsimple.txt");
-		
-	}
-	
-	public static FSONNetwork simpleNetworkBinary() {
-		
-		FSONNetwork snb = new FSONNetwork();
-
-		// Create and initialize the fourth layer.
-		Layer l4 = new Layer(100, 100, 3, 100, 100, 3, 2, 1, 0, LayerType.FULLY);
-		l4.initLayer();
-
-		// This is the last "layer": this will hold the output of the network
-		snb.out = new Cell[2];
-
-		// Initialize the cells because java won't do it for you
-		for (int i = 0; i < 2; i++) {
-			snb.out[i] = new Cell();
-		}
-
-		// Initialize the list of layers
-		snb.layers = new LinkedList<Layer>();
-
-		// Add each layer at the appropriate place in the list.
-		snb.layers.add(0, l4);
-
-		return snb;
-	}
-	
-	public void learnLFWSimpleBin() throws Exception{
-		
-		// Grab the location of this class file in the filesystem
-		URL location = FSONNetwork.class.getProtectionDomain().getCodeSource().getLocation();
-
-		String urlString = location.toString();
-
-		// Chop the end off the string,
-		// resulting in the filepath of the root of this project
-		String substr = urlString.substring(5, (urlString.length() - 4));
-		
-		// Add the filename to the end of the path.
-		// This is the file containing the names of the pairs we are going to learn from.
-		String pairsPath = substr.concat("testingInput/pairsDevTrain4.txt");
-
-		// Create a second reader to read in the training names
-		BufferedReader br = new BufferedReader(new FileReader(pairsPath));
-		
-		// This will hold a line of text from the file
-		String line = null;
-		
-		// Read the first line of the file containing the training pairs.
-		// This will be the number of training pairs to expect.
-		// (N matches and N mismatches)
-		line = br.readLine();
-		//Split the line up by commas
-		String[] names = line.split(",");
-		
-		// Read the first line of the file containing the training pairs.
-		// This will be the number of training pairs to expect.
-		// (N matches and N mismatches)
-		line = br.readLine();
-		//Split the line up by commas
-		String[] names2 = line.split(",");
-		
-		br.close();
-
-		int numb = names.length+names2.length;
-
-		// This array will hold the filenames of the pictures of each person, in a comma seperated list
-		String[] learnInput = new String[numb];
-		
-		for (int i=0; i<names.length; i++){
-			String filename = "lfw/"+ names[i]+ "/" +names[i]+ "_0001.jpg";
-			learnInput[i] = filename;
-		}
-		
-		for (int i = 0; i<names2.length; i++){
-			String filename = "testingInput/"+ names2[i]+ ".jpg";
-			learnInput[i+names.length] = filename;
-		}
-		
-		// This is the dictionary used to tell the learning functions what the ideal
-		// output for a picture of that person would look like
-		double[][] dictionary = new double[learnInput.length][2];
-		
-		// Given an index, "dictionary[x][y]", 
-		// x is the index in the list of names of the person the input represents
-		// and y is the array of output we would expect to see in a perfectly trained network.
-		// Since this is a simplified version, this networks "out" array is only 5 cells long,
-		// so we can't expect it to recognize all the faces. 
-		// So I've given it 4 faces to recognize and a 5th cell to indicate the input does
-		// not represent any of those four faces.
-		for(int k = 0; k <dictionary.length; k++){
-			if (k <names.length){
-				dictionary[k][0] = 1.0;
-				dictionary[k][1] = 0.0;
-			} else{
-				dictionary[k][0] = 0.0;
-				dictionary[k][1] = 1.0;			
-			}
-		}
-		
-		FSONNetwork.openFileInput(layers, learnInput[0]);
-		
-//		double test[][][]= new double[layers.getFirst().depth][layers.getFirst().rows][layers.getFirst().collumns];
-//		// Depth
-//		for (int l = 0; l < layers.getFirst().depth; l++) {
-//			// Row
-//			for (int j = 0; j < layers.getFirst().rows; j++) {
-//				// Column
-//				for (int k = 0; k < layers.getFirst().collumns; k++) {
-//					test[l][j][k]= layers.getFirst().cells[l][j][k].value;
-//				}
-//			}
-//		}
-		FSONNetwork.feedForward(layers, out, true);
-		// Use the learning function to learn using our newly processed input and newly created dictionary.
-		// Use the file "testlearnlfw.txt" to store our progress while learning.
-		learn(0.005, this.layers, this.out, learnInput, 10, dictionary, false, "testlearnlfw.txt");
-		
-	}
-
-	private String[] readInLFWData() throws FileNotFoundException, IOException, Exception {
-		// Grab the location of this class file in the filesystem
-		URL location = FSONNetwork.class.getProtectionDomain().getCodeSource().getLocation();
-
-		String urlString = location.toString();
-
-		// Chop the end off the string,
-		// resulting in the filepath of the root of this project
-		String substr = urlString.substring(5, (urlString.length() - 4));
-
-		// Add the filename to the end of the path.
-		// This is the file containing *all* the names.
-		String absPath = substr.concat("lfw_all_names.txt");
-
-		// Create a reader to read the names
-		BufferedReader br = new BufferedReader(new FileReader(absPath));
-		
-		// This will hold a line of text from the file
-		String line = null;
-		
-		// This will hold all the names
-		String[] names = new String[5749];
-		
-		// Read the names in
-		for(int i = 0; ((i< 5749) &&((line = br.readLine()) != null)); i++) {
-			String[] pair = line.split("	");
-			names[i] = pair[0];	
-		}
-		
-		// Close the reader
-		br.close();
-		
-		// Add the filename to the end of the path.
-		// This is the file containing the names of the pairs we are going to learn from.
-		String pairsPath = substr.concat("testingInput/pairsDevTrain3.txt");
-
-		// Create a second reader to read in the training names
-		BufferedReader br2 = new BufferedReader(new FileReader(pairsPath));
-		
-		// This will hold a line of text from the file
-		String line2 = null;
-		
-		// Read the first line of the file containing the training pairs.
-		// This will be the number of training pairs to expect.
-		// (N matches and N mismatches)
-		line2 = br2.readLine();
-		int N = Integer.parseInt(line2);
-		
-		// This array will hold the filenames of the pictures of each person, in a comma seperated list
-		String[] learnInput = new String[5749];
-
-		//This is used to help format the filenames
-		DecimalFormat formatter = new DecimalFormat("0000");
-		
-		// Read in the first set of learning pairs (the matched pairs)
-		// These lines will be in the format:
-		// name	x	y
-		//...where  x and y are the # denoting a filename of a picture of that person
-		for(int i = 0; ((i< N) &&((line2 = br2.readLine()) != null)); i++)  {
-			
-			//Split the line up by tabs
-			String[] pair = line2.split("	");
-			
-			// Find the index associated with the name just read in
-			int index = findName(names,0,5748, pair[0]);
-			
-			//Construct the filenames, using the numbers read in
-			String filename1 = "lfw/"+ pair[0]+ "/" +pair[0].concat("_")+formatter.format(Double.parseDouble(pair[1]))+".jpg";
-			String filename2 = "lfw/"+ pair[0]+ "/" +pair[0].concat("_")+formatter.format(Double.parseDouble(pair[2]))+".jpg";
-		
-			// If the name is found in the list of names
-			// and the entry at that index in learnInput is not empty 
-			// (IE filenames of input for that person have already been recorded)
-			if ((learnInput[index] != null) && (!learnInput[index].isEmpty())){
-				
-				// Grab the filenames at this index. They will be delemited by a comma.
-				String[] inputsAtIndex = learnInput[index].split(",");
-				
-				// These booleans indicate if the filenames we read in from the learning pairs
-				// are found within the filenames already stored at this index
-				boolean found1 = false;
-				boolean found2 = false;
-				
-				// Search the filenames stored at this index, recording if we find either 
-				// filename1 (by setting found1 to true) or filename2 (by setting found2 to 
-				// true
-				for (int j = 0; j< inputsAtIndex.length; j++){
-					if (inputsAtIndex[j].equals(filename1)){
-						found1 = true;
-					} else if(inputsAtIndex[j].equals(filename2)){
-						found2= true;
-					}
-				}
-				
-				// If we haven't found filename1 alreaded stored at this index,
-				// simply add it to the end of the string at this index with a
-				// delimiting comma
-				if (!found1){
-					learnInput[index] = learnInput[index].concat(","+filename1);
-				}
-				
-				// If we haven't found filename2 alreaded stored at this index,
-				// simply add it to the end of the string at this index with a
-				// delimiting comma
-				if (!found2){
-					learnInput[index] = learnInput[index].concat(","+filename2);
-				}
-				
-			} else{ // The entry at this index doesn't have any input filenames stored
-				// here yet
-				
-				//If this is the first input filename processed...
-				if (i == 0){
-					//Open it as input
-					openFileInput(layers, filename1);
-					//Feed it forward and set up the connections
-					feedForward(layers, out, true);
-				}
-				
-				// If the filenames aren't the same
-				if (!(filename1.equals(filename2))){
-					// Store them both at the entry for this index,
-					// seperated by a comma
-					learnInput[index] = filename1.concat(","+filename2);
-				} else {
-					// Just store the first filename, because they are 
-					// the same.
-					learnInput[index] = filename1;
-				}
-				
-			}
-		}
-
-		// This section processes the learning pairs that represent mismatches
-		// These lines will be in the format:
-		// name	x	name2 y
-		//...where  x and y are the # denoting a filename of a picture of the person named before it
-		// (IE "x" is a filename of an image of "name", "y" is a filename of an image of "name2")
-		for(int j = 0; ((j< N) &&((line2 = br2.readLine()) != null)); j++)  {
-			
-			// Split the line up by tabs
-			String[] pair = line2.split("	");
-			
-			// Find the index of the name of the first person in the pair
-			// in the master list of names
-			int index1 = findName(names,0,5748, pair[0]);
-			
-			// Find the index of the name of the second person in the pair
-			// in the master list of names
-			int index2 = findName(names,0,5748, pair[2]);
-			
-			// Build the filenames for each image
-			String filename1 = "lfw/"+ pair[0]+ "/" +pair[0].concat("_")+formatter.format(Double.parseDouble(pair[1]))+".jpg";
-			String filename2 = "lfw/"+ pair[2]+ "/" +pair[2].concat("_")+formatter.format(Double.parseDouble(pair[3]))+".jpg";
-		
-
-			// First deal with the first image ("filename1", a picture of the person named at "index1")
-			// If the name was found in the master list of names (ie the entry at this index is not null)
-			// and the entry at this index already contains filenames
-			if ((learnInput[index1] != null) && (!learnInput[index1].isEmpty())){
-				
-				// Split the string containing the list of filenames up by the delimiting commas
-				String[] inputsAtIndex = learnInput[index1].split(",");
-				
-				// This boolean will tell us if we find filename1 in this list
-				boolean found1 = false;
-				
-				// Search the list of filenames contained in the entry at this index for filename1
-				int k =0;
-				while ((k< inputsAtIndex.length)&&(!found1)){
-					if (inputsAtIndex[k].equals(filename1)){
-						found1 = true;
-					} else {
-					k++;
-					}
-				}
-				
-				// If we don't find filename1 in the list of filenames at this entry...
-				if (!found1){
-					//... add it to the end of the list with a delimiting comma
-					learnInput[index1] = learnInput[index1].concat(","+filename1);
-				}
-				
-			} else{ // The entry at this index is empty
-				learnInput[index1] = filename1; // So store the filename here
-			}
-			
-			// Now we deal with the second image ("filename2", a picture of the person named at "index2")
-			// If the name was found in the master list of names (ie the entry at this index is not null)
-			// and the entry at this index already contains filenames
-			if ((learnInput[index2] != null) && (!learnInput[index2].isEmpty())){
-				
-				// Split the string containing the list of filenames up by the delimiting commas
-				String[] inputsAtIndex = learnInput[index2].split(",");
-				
-				// This boolean will tell us if we find filename2 in this list
-				boolean found2 = false;
-				
-				// Search the list of filenames contained in the entry at this index for filename2
-				int k =0;
-				while ((k< inputsAtIndex.length)&&(!found2)){
-					if (inputsAtIndex[k].equals(filename1)){
-						found2 = true;
-					} else {
-					k++;
-					}
-				}
-				
-				// If we don't find filename2 in this list
-				if (!found2){
-					
-					// Add filename2 to the end of the list, seperated by a comma
-					learnInput[index1] = learnInput[index2].concat(","+filename2);
-				}
-				
-			} else{ // There aren't any filenames stored at this index yet
-				learnInput[index2] = filename2; // So set this entry to filename2
-			}
-			
-		}
-		
-		// Close the reader used to read in the training pairs
-		br2.close();
-		return learnInput;
-	}
-	
-	public static FSONNetwork flagNetwork() {
-		
-		FSONNetwork fn = new FSONNetwork();
-
-		// Declare and initialize the first layer
-		Layer l1 = new Layer(40, 40, 3, 5, 5, 3, 16, 1, 0, LayerType.CONV);
-
-		// Setup the layer. This creates and initializes the filters and biases, all filter weights with a value of 0.5, all biases with a value of 0.
-		l1.initLayer();
-
-		// Create the second layer.
-		Layer l2 = new Layer(36, 36, 16, 5, 5, 16, 16, 1, 0, LayerType.CONV);
-		l2.initLayer();
-
-		// Create and initialize the third layer.
-		Layer l3 = new Layer(32, 32, 16, 8, 8, 1, 256, 8, 0, LayerType.MAXPOOL);
-		l3.initLayer();
-
-		// Create and initialize the fourth layer.
-		Layer l4 = new Layer(4, 4, 16, 2, 2, 16, 9, 1, 0, LayerType.LOCAL);
-		l4.initLayer();
-		
-		// Create and initialize the fourth layer.
-		Layer l5 = new Layer(3, 3, 1, 3, 3, 1, 4, 1, 0, LayerType.FULLY);
-		l5.initLayer();
-		
-
-		// This is the last "layer": this will hold the output of the network
-		fn.out = new Cell[4];
-
-		// Initialize the cells because java won't do it for you
-		for (int i = 0; i < 4; i++) {
-			fn.out[i] = new Cell();
-		}
-
-		// Initialize the list of layers
-		fn.layers = new LinkedList<Layer>();
-
-		// Add each layer at the appropriate place in the list.
-		fn.layers.add(0, l1);
-		fn.layers.add(1, l2);
-		fn.layers.add(2, l3);
-		fn.layers.add(3, l4);
-		fn.layers.add(4, l5);
-
-		return fn;
-	}
-
-	public void learnFlag() throws Exception{
-		
-		// This array will hold the filenames of the pictures of each input file, 
-		String[] learnInput = new String[80];
-		
-		for (int i=0; i<20; i++){
-			String filename = "testingInput/flag/us"+(i+1)+".jpg";
-			learnInput[i] = filename;
-		}
-		
-		for (int i=0; i<20; i++){
-			String filename = "testingInput/flag/uk"+(i+1)+".jpg";
-			learnInput[i+20] = filename;
-		}
-		
-		for (int i=0; i<20; i++){
-			String filename = "testingInput/flag/irish"+(i+1)+".jpg";
-			learnInput[i+40] = filename;
-		}
-		
-		for (int i=0; i<20; i++){
-			String filename = "testingInput/flag/greek"+(i+1)+".jpg";
-			learnInput[i+60] = filename;
-		}
-		
-		
-		// This is the dictionary used to tell the learning functions what the ideal
-		// output for a picture of that person would look like
-		double[][] dictionary = new double[80][4];
-		
-		// Given an index, "dictionary[x][y]", 
-		// x is the index in the list of names of the person the input represents
-		// and y is the array of output we would expect to see in a perfectly trained network.
-		// Since this is a simplified version, this networks "out" array is only 5 cells long,
-		// so we can't expect it to recognize all the faces. 
-		// So I've given it 4 faces to recognize and a 5th cell to indicate the input does
-		// not represent any of those four faces.
-		for(int k = 0; k <dictionary.length; k++){
-			if (k <20){
-				dictionary[k][0] = 1.0;
-				dictionary[k][1] = 0.0;
-				dictionary[k][2] = 0.0;
-				dictionary[k][3] = 0.0;
-			} else if ((k>=20)&& (k <40)){
-				dictionary[k][0] = 0.0;
-				dictionary[k][1] = 1.0;
-				dictionary[k][2] = 0.0;
-				dictionary[k][3] = 0.0;		
-			}else if ((k>=40)&& (k <60)){
-				dictionary[k][0] = 0.0;
-				dictionary[k][1] = 0.0;
-				dictionary[k][2] = 1.0;
-				dictionary[k][3] = 0.0;		
-			}else{
-				dictionary[k][0] = 0.0;
-				dictionary[k][1] = 0.0;
-				dictionary[k][2] = 0.0;
-				dictionary[k][3] = 1.0;		
-			}
-		}
-		
-		FSONNetwork.openFileInput(layers, learnInput[0]);
-		
-		double test[][][]= new double[layers.getFirst().depth][layers.getFirst().rows][layers.getFirst().collumns];
-		// Depth
-		for (int l = 0; l < layers.getFirst().depth; l++) {
-			// Row
-			for (int j = 0; j < layers.getFirst().rows; j++) {
-				// Column
-				for (int k = 0; k < layers.getFirst().collumns; k++) {
-					test[l][j][k]= layers.getFirst().cells[l][j][k].value;
-				}
-			}
-		}
-		FSONNetwork.feedForward(layers, out, true);
-		// Use the learning function to learn using our newly processed input and newly created dictionary.
-		// Use the file "testlearnlfw.txt" to store our progress while learning.
-		learn(1, this.layers, this.out, learnInput, 1, dictionary, false, "testlearnlfw.txt");
-		
-	}
-
-	public static FSONNetwork patternNetwork() {
-		
-		FSONNetwork pn = new FSONNetwork();
-
-		// Create the second layer.
-		Layer l0 = new Layer(15, 15, 3, 5, 5, 3, 3, 1, 0, LayerType.CONV);
+		Layer l0 = new Layer(1, 1, 3, 1, 1, 3, 9, 1, 0, LayerType.CONV);
 		l0.initLayer();
-
-		// Create the second layer.
-		Layer l1 = new Layer(11, 11, 3, 4, 4, 3, 3, 1, 0, LayerType.CONV);
-		l1.initLayer();
-
-		// Create the second layer.
-		Layer l2 = new Layer(8, 8, 3, 3, 3, 3, 108, 1, 0, LayerType.MAXPOOL);
-		l2.initLayer();
-
-		// Create and initialize the third layer.
-		Layer l3 = new Layer(6, 6, 3, 2 , 2, 3, 9, 2, 0, LayerType.LOCAL);
-		l3.initLayer();
-
-		// Create and initialize the fourth layer.
-		Layer l4 = new Layer(3, 3, 1, 3, 3, 1, 1, 1, 0, LayerType.FULLY);
-		l4.initLayer();
 		
-
+		Layer l1 = new Layer(1, 1, 9, 1, 1, 9, 9, 1, 0, LayerType.FULLY);
+		l1.initLayer();
+		
 		// This is the last "layer": this will hold the output of the network
-		pn.out = new Cell[1];
+		cn.out = new Cell[9];
 
 		// Initialize the cells because java won't do it for you
-		pn.out[0] = new Cell();
-
+		cn.out[0] = new Cell();
+		cn.out[1] = new Cell();
+		cn.out[2] = new Cell();
+		cn.out[3] = new Cell();
+		cn.out[4] = new Cell();
+		cn.out[5] = new Cell();
+		cn.out[6] = new Cell();
+		cn.out[7] = new Cell();
+		cn.out[8] = new Cell();
+		
 		// Initialize the list of layers
-		pn.layers = new LinkedList<Layer>();
+		cn.layers = new LinkedList<Layer>();
 
 		// Add each layer at the appropriate place in the list.
-		pn.layers.add(0, l0);
-		pn.layers.add(1, l1);
-		pn.layers.add(2, l2);
-		pn.layers.add(3, l3);
-		pn.layers.add(4, l4);
+		cn.layers.add(0, l0);
+		cn.layers.add(1, l1);
 		
-		return pn;
+		return cn;
 	}
 
-	public void learnPattern() throws Exception{
+	/**
+	 * This function creates and trains a sample network to detect color.
+	 * The network has an output array of 9 doubles, each representing the
+	 * probability that the input color corresponds to the 8 colors:
+	 * 
+	 * Red, Orange, Yellow, Green, Aqua (blue/green), Blue, Purple,
+	 * and Pink (fuscha). 
+	 * 
+	 * (in that order)
+	 * 
+	 * The last element in the array also corresponds to red; This is an 
+	 * artifact of the arrangement of the Hue, where both 0 and 360 
+	 * correspond to the same canonical red.
+	 * 
+	 * Please note that the saturation and value (IE "brightness") are
+	 * disregarded (this means that the colors "white", "black", and 
+	 * "grey" are not recognized).
+	 * 
+	 * See the function:
+	 * 		public static FSONNetwork colorNetwork()
+	 * ...declared in this class for more details on the network itself.
+	 * 
+	 * @return A sample trained color-recognition network.
+	 * @throws Exception Thrown when there is a problem reading the training input files.
+	 */
+	public static FSONNetwork createAndTrainColorNetwork() throws Exception{
+		FSONNetwork colorNet = FSONNetwork.colorNetwork();
+
+		// This array will hold the filenames of the pictures of each input file
+		String[] learnInput = new String[18];
 		
-		// This array will hold the filenames of the pictures of each input file, 
-		String[] learnInput = new String[14];
+		learnInput[0] = "testingInput/colors/red/0.jpg";
+		learnInput[1] = "testingInput/colors/orange/0.jpg";
+		learnInput[2] = "testingInput/colors/yellow/0.jpg";
+		learnInput[3] = "testingInput/colors/green/0.jpg";
+		learnInput[4] = "testingInput/colors/aqua/0.jpg";
+		learnInput[5] = "testingInput/colors/blue/0.jpg";
+		learnInput[6] = "testingInput/colors/purple/0.jpg";
+		learnInput[7] = "testingInput/colors/pink/0.jpg";
+		learnInput[8] = "testingInput/colors/red/1.jpg";
+		learnInput[9] = "testingInput/colors/red/2.jpg";
+		learnInput[10] = "testingInput/colors/orange/1.jpg";
+		learnInput[11] = "testingInput/colors/yellow/1.jpg";
+		learnInput[12] = "testingInput/colors/green/1.jpg";
+		learnInput[13] = "testingInput/colors/aqua/1.jpg";
+		learnInput[14] = "testingInput/colors/blue/1.jpg";
+		learnInput[15] = "testingInput/colors/purple/1.jpg";
+		learnInput[16] = "testingInput/colors/pink/1.jpg";
+		learnInput[17] = "testingInput/colors/red/3.jpg";
 		
-		for (int i=0; i<14; i++){
-			String filename = "testingInput/patterns/easy/"+i+".jpg";
-			learnInput[i] = filename;
-		}
 		
+		// This is the dictionary used to tell the learning functions what the
+		// ideal output for a picture of that person would look like
+		double[][] dictionary = new double[18][9];
+
+		// Given an index, "dictionary[x][y]",
+		// x is the index in the list of names of the person the input
+		// represents, 
+		// and y is the array of output we would expect to see in a perfectly
+		// trained network.
+		dictionary[0][0] =1.0;
+		dictionary[1][1] =1.0;
+		dictionary[2][2] =1.0;
+		dictionary[3][3] =1.0;
+		dictionary[4][4] =1.0;
+		dictionary[5][5] =1.0;
+		dictionary[6][6] =1.0;
+		dictionary[7][7] =1.0;
+		dictionary[8][8] =1.0;
+		dictionary[9][0] =1.0;
+		dictionary[10][1] =1.0;
+		dictionary[11][2] =1.0;
+		dictionary[12][3] =1.0;
+		dictionary[13][4] =1.0;
+		dictionary[14][5] =1.0;
+		dictionary[15][6] =1.0;
+		dictionary[16][7] =1.0;
+		dictionary[17][8] =1.0;
 		
-		// This is the dictionary used to tell the learning functions what the ideal
-		// output for a picture of that person would look like
-		double[][] dictionary = new double[14][1];
-		
-		// Given an index, "dictionary[x][y]", 
-		// x is the index in the list of names of the person the input represents
-		// and y is the array of output we would expect to see in a perfectly trained network.
-		dictionary[0][0] = 0.0;
-		dictionary[1][0] = 0.0;
-		dictionary[2][0] = 0.0;
-		dictionary[3][0] = 0.0;
-		dictionary[4][0] = 0.0;
-		dictionary[5][0] = 0.0;
-		dictionary[6][0] = 1.0;
-		dictionary[7][0] = 0.0;
-		dictionary[8][0] = 0.0;
-		dictionary[9][0] = 1.0;
-		dictionary[10][0] = 1.0;
-		dictionary[11][0] = 0.0;
-		dictionary[12][0] = 0.0;
-		dictionary[13][0] = 1.0;
-		
-		FSONNetwork.openFileInput(layers, learnInput[0]);
-		
-//		double test[][][]= new double[layers.getFirst().depth][layers.getFirst().rows][layers.getFirst().collumns];
-//		// Depth
-//		for (int l = 0; l < layers.getFirst().depth; l++) {
-//			// Row
-//			for (int j = 0; j < layers.getFirst().rows; j++) {
-//				// Column
-//				for (int k = 0; k < layers.getFirst().collumns; k++) {
-//					test[l][j][k]= layers.getFirst().cells[l][j][k].value;
-//				}
-//			}
-//		}
-		
-		FSONNetwork.feedForward(layers, out, true);
-		
-		// Use the learning function to learn using our newly processed input and newly created dictionary.
+		// Open and feed forward the first training input to create the connections
+		// used in backpropagation (training).
+		FSONNetwork.openHSVFileInput(colorNet.layers, learnInput[0]);
+		FSONNetwork.feedForward(colorNet.layers, colorNet.out, true);
+
+		// Use the learning function to learn using our newly processed input
+		// and newly created dictionary.
 		// Use the file "testlearnlfw.txt" to store our progress while learning.
-		learn(1, this.layers, this.out, learnInput, 1000, dictionary, true, "testlearnpattern.txt");
+		// The learning factor is set low here because input ranges from 0 to 1 
+		// over a single cell, so finer control is needed.
+		FSONNetwork.learn(0.225, colorNet.layers, colorNet.out, learnInput, 5000, dictionary, false,
+				"testlearncolor.txt");
 		
+		return colorNet;
 	}
+	
 }

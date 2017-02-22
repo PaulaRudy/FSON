@@ -1,4 +1,0 @@
-1
-Al_Gore	1	1
-Al_Gore	1	Al_Gore	1
-

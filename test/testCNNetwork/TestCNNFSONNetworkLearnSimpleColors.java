@@ -39,13 +39,12 @@ public class TestCNNFSONNetworkLearnSimpleColors {
 		learnInput[17] = "testingInput/colors/red/3.jpg";
 
 		// This is the dictionary used to tell the learning functions what the
-		// ideal
-		// output for a picture of that person would look like
+		// ideal output for each input would look like
 		double[][] dictionary = new double[18][9];
 
 		// Given an index, "dictionary[x][y]",
-		// x is the index in the list of names of the person the input
-		// represents, and y is the array of output we would expect to
+		// x is the index in the list of input,
+		// and y is the array of output we would expect to
 		// see in a perfectly trained network.
 		dictionary[0][0] = 1.0;
 		dictionary[1][1] = 1.0;

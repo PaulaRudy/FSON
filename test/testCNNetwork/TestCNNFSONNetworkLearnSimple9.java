@@ -2,6 +2,9 @@ package testCNNetwork;
 
 import static org.junit.Assert.*;
 
+import java.io.FileOutputStream;
+import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.LinkedList;
 
 import org.junit.Before;
@@ -30,7 +33,6 @@ public class TestCNNFSONNetworkLearnSimple9 {
 		Layer l1 = new Layer(4,4,1,2,2,1,4,2,0, LayerType.LOCAL);
 		l1.initLayer();
 
-		// Create and initialize the second layer
 		Layer l2 = new Layer(2, 2, 1, 2, 2, 1, 2, 1, 0, LayerType.FULLY);
 		l2.initLayer();
 
@@ -57,18 +59,6 @@ public class TestCNNFSONNetworkLearnSimple9 {
 		out[0].value = Layer.activationFunction(out[0].value);
 		out[1].value = Layer.activationFunction(out[1].value);
 		
-		double test[][][]= new double[layers.getLast().depth][layers.getLast().rows][layers.getLast().collumns];
-		// Depth
-		for (int l = 0; l < layers.getLast().depth; l++) {
-			// Row
-			for (int j = 0; j < layers.getLast().rows; j++) {
-				// Column
-				for (int k = 0; k < layers.getLast().collumns; k++) {
-					test[l][j][k]= layers.getLast().cells[l][j][k].value;
-				}
-			}
-		}
-		
 		// Set up the input array (an array of the filenames of the input files,
 		// located from the root directory of the project).
 		String[] input = new String[12];
@@ -82,40 +72,54 @@ public class TestCNNFSONNetworkLearnSimple9 {
 		input[7] = "testingInput/8b.jpg";
 		input[8] = "testingInput/9b.jpg";
 		input[9] = "testingInput/10b.jpg";
-		input[10] = "testingInput/1.jpg";
-		input[11]= "testingInput/6.jpg";
+		input[10] = "testingInput/11b.jpg";
+		input[11] = "testingInput/0b.jpg";
 
 		// Set up the "dictionary". This is an array of the expected outputs
 		// for each input.
 		double[][] dictionary = new double[input.length][out.length];
-		dictionary[0][0] = 1.0;
-		dictionary[1][0] = 1.0;
-		dictionary[2][0] = 1.0;
-		dictionary[3][0] = 1.0;
-		dictionary[4][0] = 0.0;
-		dictionary[5][0] = 0.0;
-		dictionary[6][0] = 0.0;
-		dictionary[7][0] = 0.0;
-		dictionary[8][0] = 0.0;
-		dictionary[9][0] = 0.0;
-		dictionary[10][0]= 1.0;
-		dictionary[11][0] =0.0;
+		dictionary[0][0] = 1;
+		dictionary[1][0] = 1;
+		dictionary[2][0] = 1;
+		dictionary[3][0] = 1;
+		dictionary[4][0] = 0;
+		dictionary[5][0] = 0;
+		dictionary[6][0] = 0;
+		dictionary[7][0] = 0;
+		dictionary[8][0] = 0;
+		dictionary[9][0] = 0;
+		dictionary[10][0] = 0;
+		dictionary[11][0] = 0;
 
-		dictionary[0][1] = 0.0;
-		dictionary[1][1] = 0.0;
-		dictionary[2][1] = 0.0;
-		dictionary[3][1] = 1.0;
-		dictionary[4][1] = 1.0;
-		dictionary[5][1] = 1.0;
-		dictionary[6][1] = 0.0;
-		dictionary[7][1] = 1.0;
-		dictionary[8][1] = 0.0;
-		dictionary[9][1] = 0.0;
-		dictionary[10][1] = 0.0;
-		dictionary[11][1] = 1.0;
+		dictionary[0][1] = 0;
+		dictionary[1][1] = 0;
+		dictionary[2][1] = 0;
+		dictionary[3][1] = 1;
+		dictionary[4][1] = 1;
+		dictionary[5][1] = 1;
+		dictionary[6][1] = 0;
+		dictionary[7][1] = 1;
+		dictionary[8][1] = 0;
+		dictionary[9][1] = 0;
+		dictionary[10][1] = 1;
+		dictionary[11][1] = 0;
+		PrintStream stdout = System.out;
+		PrintStream outStream = new PrintStream(new FileOutputStream("simple9.csv"));
+		System.setOut(outStream);
+		
+		long startTime = System.nanoTime();
 		
 		// Actually call the learning function.
-		FSONNetwork.learn(1, layers, out, input, 500, dictionary, true, "TestCNNFSONNetworkLearnSimple8");
+		FSONNetwork.learn(1, layers, out, input, 500, dictionary, true, "TestCNNFSONNetworkLearnSimple2");
+
+		long endTime = System.nanoTime();
+		long duration = (endTime - startTime)/1000000;
+		
+		System.setOut(stdout);
+		
+		System.out.println(duration);
+		
+		outStream.close();
 	}
 
 	/**
@@ -124,8 +128,11 @@ public class TestCNNFSONNetworkLearnSimple9 {
 	@Test
 	public void test() throws Exception {
 
+		double[] results= new double[10];
+		double[] expected= new double[10];
+		
 		// Open file for input
-		FSONNetwork.openFileInputBW(layers, "testingInput/1b.jpg");
+		FSONNetwork.openFileInputBW(layers, "testingInput/3.jpg");
 		// Feed the input through the layers of the network.
 		FSONNetwork.feedForward(layers, out, false);
 		// Here we are using the sigmoid activation function because 
@@ -133,32 +140,13 @@ public class TestCNNFSONNetworkLearnSimple9 {
 		out[0].value = Layer.activationFunction(out[0].value);
 		out[1].value = Layer.activationFunction(out[1].value);
 		
+		expected[0] = 1.0;
+		expected[1] = 0.0;
+		results[0] = out[0].value;
+		results[1] = out[1].value;
+		
 		assertEquals( 1.0, out[0].value, 0.2);
 		assertEquals( 0.0, out[1].value, 0.2);
-		
-		// Open file for input
-		FSONNetwork.openFileInputBW(layers, "testingInput/7b.jpg");
-		// Feed the input through the layers of the network.
-		FSONNetwork.feedForward(layers, out, false);
-		// Here we are using the sigmoid activation function because
-		// the output cells are independant of one another.
-		out[0].value = Layer.activationFunction(out[0].value);
-		out[1].value = Layer.activationFunction(out[1].value);
-
-		assertEquals(0.0, out[0].value, 0.2);
-		assertEquals(0.0, out[1].value, 0.2);
-
-		// Open file for input
-		FSONNetwork.openFileInputBW(layers, "testingInput/8b.jpg");
-		// Feed the input through the layers of the network.
-		FSONNetwork.feedForward(layers, out, false);
-		// Here we are using the sigmoid activation function because
-		// the output cells are independant of one another.
-		out[0].value = Layer.activationFunction(out[0].value);
-		out[1].value = Layer.activationFunction(out[1].value);
-
-		assertEquals(0.0, out[0].value, 0.2);
-		assertEquals(1.0, out[1].value, 0.2);
 		
 		// Open file for input
 		FSONNetwork.openFileInputBW(layers, "testingInput/4.jpg");
@@ -169,9 +157,48 @@ public class TestCNNFSONNetworkLearnSimple9 {
 		out[0].value = Layer.activationFunction(out[0].value);
 		out[1].value = Layer.activationFunction(out[1].value);
 
-		assertEquals(0.0, out[0].value, 0.1);
-		assertEquals(0.0, out[1].value, 0.1);
+		expected[2] = 0.0;
+		expected[3] = 0.0;
+		results[2] = out[0].value;
+		results[3] = out[1].value;
+		
+		assertEquals(0.0, out[0].value, 0.2);
+		assertEquals(0.0, out[1].value, 0.2);
 
+		// Open file for input
+		FSONNetwork.openFileInputBW(layers, "testingInput/7.jpg");
+		// Feed the input through the layers of the network.
+		FSONNetwork.feedForward(layers, out, false);
+		// Here we are using the sigmoid activation function because
+		// the output cells are independant of one another.
+		out[0].value = Layer.activationFunction(out[0].value);
+		out[1].value = Layer.activationFunction(out[1].value);
+
+		expected[4] = 0.0;
+		expected[5] = 1.0;
+		results[4] = out[0].value;
+		results[5] = out[1].value;
+		
+		assertEquals(0.0, out[0].value, 0.2);
+		assertEquals(1.0, out[1].value, 0.2);
+		
+		// Open file for input
+		FSONNetwork.openFileInputBW(layers, "testingInput/9.jpg");
+		// Feed the input through the layers of the network.
+		FSONNetwork.feedForward(layers, out, false);
+		// Here we are using the sigmoid activation function because
+		// the output cells are independant of one another.
+		out[0].value = Layer.activationFunction(out[0].value);
+		out[1].value = Layer.activationFunction(out[1].value);
+
+		expected[6] = 1.0;
+		expected[7] = 1.0;
+		results[6] = out[0].value;
+		results[7] = out[1].value;
+		
+		assertEquals(1.0, out[0].value, 0.2);
+		assertEquals(1.0, out[1].value, 0.2);
+		
 		// Open file for input
 		FSONNetwork.openFileInputBW(layers, "testingInput/8.jpg");
 		// Feed the input through the layers of the network.
@@ -181,43 +208,23 @@ public class TestCNNFSONNetworkLearnSimple9 {
 		out[0].value = Layer.activationFunction(out[0].value);
 		out[1].value = Layer.activationFunction(out[1].value);
 
-		assertEquals(0.0, out[0].value, 0.1);
-		assertEquals(0.0, out[1].value, 0.1);
-		
-		FSONNetwork.openFileInputBW(layers, "testingInput/9.jpg");
-		// Feed the input through the layers of the network.
-		FSONNetwork.feedForward(layers, out, false);
-		// Here we are using the sigmoid activation function because
-		// the output cells are independant of one another.
-		out[0].value = Layer.activationFunction(out[0].value);
-		out[1].value = Layer.activationFunction(out[1].value);
+		expected[8] = 0.0;
+		expected[9] = 0.0;
+		results[8] = out[0].value;
+		results[9] = out[1].value;
 
-		assertEquals(1.0, out[0].value, 0.1);
-		assertEquals(1.0, out[1].value, 0.1);		
-		
-		FSONNetwork.openFileInputBW(layers, "testingInput/7.jpg");
-		// Feed the input through the layers of the network.
-		FSONNetwork.feedForward(layers, out, false);
-		// Here we are using the sigmoid activation function because
-		// the output cells are independant of one another.
-		out[0].value = Layer.activationFunction(out[0].value);
-		out[1].value = Layer.activationFunction(out[1].value);
+		assertEquals(0.0, out[0].value, 0.2);
+		assertEquals(0.0, out[1].value, 0.2);
 
-		assertEquals(0.0, out[0].value, 0.1);
-		assertEquals(1.0, out[1].value, 0.1);
-		
-		FSONNetwork.openFileInputBW(layers, "testingInput/10.jpg");
-		// Feed the input through the layers of the network.
-		FSONNetwork.feedForward(layers, out, false);
-		// Here we are using the sigmoid activation function because
-		// the output cells are independant of one another.
-		out[0].value = Layer.activationFunction(out[0].value);
-		out[1].value = Layer.activationFunction(out[1].value);
+		System.out.println(Arrays.toString(results));
+		System.out.println(Arrays.toString(expected));
+		double testError = FSONNetwork.crossEntropyTotalErrorArray(results, expected);
 
-		assertEquals(1.0, out[0].value, 0.1);
-		assertEquals(1.0, out[1].value, 0.1);
+		PrintStream resultStream = new PrintStream(new FileOutputStream("simple9test.csv"));
+		resultStream.print(testError);
+		resultStream.close();
+
 				
 
 	}
-
 }

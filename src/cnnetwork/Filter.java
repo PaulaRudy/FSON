@@ -11,11 +11,10 @@ public class Filter {
 	//these values are wiped right before a new input is used.
 	//A value of Double.NaN here indicates no gradient value has been computed yet
 	//for that location
-	//TODO: Are these nessecary?
 	public String equationAtFilter;// The equation used to calculate an output for this
 							// filter, stored in string form to be used with
 							// JavaCalculus
-							//TODO Remove. Unnessecary.
+							//TODO: Remove. Unnessecary.
 	public LinkedList<FilterConnection> connections;// A list of connections that use
 												// this filter, to be used in
 												// backpropagation.
@@ -71,7 +70,7 @@ public class Filter {
 		this.connections = new LinkedList<FilterConnection>();
 	}
 	
-	//TODO heading
+	//TODO: Function heading
 	public Filter(int depth, int rows, int cols) {
 		this.weights = new double[depth][rows][cols];
 		this.previousWeights = new double[depth][rows][cols];

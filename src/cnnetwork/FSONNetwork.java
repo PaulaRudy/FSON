@@ -133,6 +133,11 @@ public class FSONNetwork {
 	 * 
 	 * (both defined in this class file- IE FSONNetwork.java).
 	 * 
+	 * Please note that since the only time we are looking for a parial derivative 
+	 * with respect to a weight for backpropagation is when we are looking to 
+	 * increment that paticular weight, the layer in which that weight resides
+	 * cannot be a maxpool layer.
+	 * 
 	 * @param layers
 	 *            The layers that make up this network.
 	 * @param out
@@ -167,15 +172,16 @@ public class FSONNetwork {
 	 *             compute function used on the line marked
 	 *             "//Find the net value of the output cell". See
 	 *             Layer::activationFunction() for more details.
+	 *             This exception may also be thrown when trying to use this
+	 *             function to find the partial derivative for a weight that
+	 *             resides in a maxpool layer.
 	 *             
-	 *TODO  Input verification? Perhaps make sure not on maxpool layer?
 	 */
 	public static double computePartialDerivative(LinkedList<Layer> layers, Cell[] out, int layerIndex, int filterIndex,
 			int depth, int row, int column, double[] expected) throws Exception {
 		// If there is already a value stored for this partial derivative...
 		if (!Double.isNaN(layers.get(layerIndex).filters.get(filterIndex).gradientValues[depth][row][column])) {
 			// ...then just use that
-			//TODO: Take this out? (Will this ever be reached?)
 			return layers.get(layerIndex).filters.get(filterIndex).gradientValues[depth][row][column];
 		} else {
 			// This will hold the sum of all the calculated partial derivatives
@@ -199,7 +205,6 @@ public class FSONNetwork {
 				// This is to compensate for odd shaped filters and/or layers;
 				// if the filter and/or layer lacks a dimension, they will be given as -1,
 				// so we will count those as 0 to avoid altering where we are going to look for the cell.
-				// TODO: Is this nessecary? Take this out?
 				int rowTrue;
 				if (row != -1) {
 					rowTrue = row;
@@ -219,7 +224,6 @@ public class FSONNetwork {
 				// Since this is the only thing multiplied by the weight when calculating, 
 				// that means that this value is *also* the derivative of the net of this output cell with respect
 				// to this weight(IE dnet/dw).
-				// TODO: Store this instead of calculate it?
 				Double dnetdw = layers.get(layerIndex).cells[startCell.depth + depth][startCell.row
 						+ rowTrue][startCell.column + columnTrue].value;
 
@@ -231,8 +235,6 @@ public class FSONNetwork {
 					// Since the only time we are looking for a parial derivative with respect to
 					// a *weight* is when we are looking to increment that paticular weight,
 					// the layer in which that weight resides *cannot* be a maxpool layer.
-					//TODO: Should this be moved to earlier in the function?
-					//TODO: Document this in header.
 					if (layers.get(layerIndex).type == LayerType.MAXPOOL){
 						throw new Exception("Trying to find a partial derivative with respect to a weight in a maxpool layer. This should never happen!");
 					}	
@@ -274,6 +276,9 @@ public class FSONNetwork {
 	 * 
 	 * (both defined in this class file- IE FSONNetwork.java).
 	 * 
+	 * Please note that since biases are not used in maxpool layers, the layer
+	 * in which the bias resides cannot be a maxpool layer.
+	 * 
 	 * @param layers
 	 *            The layers that make up this network.
 	 * @param out
@@ -293,14 +298,15 @@ public class FSONNetwork {
 	 *             This exception is thrown when a problem occurs while
 	 *             calculating the activation function for a cell. See
 	 *             Layer::activationFunction() for more details.
+	 *             This exception is also thrown when trying to find the partial
+	 *             derivative with respect to a bias that resides in a maxpool
+	 *             layer. Since biases are not used in maxpool layers, the layer
+	 * 			   in which the bias resides cannot be a maxpool layer.
 	 * 
-	 *             TODO: error checking to make sure we're not on a maxpool
-	 *             layer, math
 	 */
 	public static double computePartialDerivative(LinkedList<Layer> layers, Cell[] out, int layerIndex, int biasIndex,
 			double[] expected) throws Exception {
 		// If there is already a value stored for this partial derivative...
-		// TODO: Take this out? (Will this ever be reached?)
 		if (!Double.isNaN(layers.get(layerIndex).biases.get(biasIndex).derivative)) {
 			// ...then just use that
 			return layers.get(layerIndex).biases.get(biasIndex).derivative;
@@ -335,11 +341,8 @@ public class FSONNetwork {
 
 						} else {
 							
-							// Since the only time we are looking for a parial derivative with respect to
-							// a *bias* is when we are looking to increment that paticular bias,
-							// the layer in which that bias resides *cannot* be a maxpool layer.
-							//TODO: Move this to earlier in the function?
-							//TODO: Document this in header.
+							// Since biases are not used in maxpool layers, the layer 
+							// in which the bias resides cannot be a maxpool layer.
 							if (layers.get(layerIndex).type == LayerType.MAXPOOL){
 								throw new Exception("Trying to find a partial derivative with respect to a bias in a maxpool layer. This should never happen!");
 							}
@@ -432,7 +435,6 @@ public class FSONNetwork {
 			
 			// ...then just use that
 			return layers.get(layerIndex).cells[outcell.depth][outcell.row][outcell.column].derivative;
-			//TODO: Remove this? (Will this ever be reached?)
 			
 		} else {
 			
@@ -457,10 +459,8 @@ public class FSONNetwork {
 						.get(i).connections;
 				
 				for (int j = 0; j < currentFilterConnections.size(); j++) {
-					
-					// TODO: Account for -1s?
-					// If this filter is applied to the cell we are looking
-					// at...
+
+					// If this filter is applied to the cell we are looking at...
 					if ((currentFilterConnections.get(j).inStart.depth <= outcell.depth)
 							&& (currentFilterConnections.get(j).inStart.row <= outcell.row)
 							&& (currentFilterConnections.get(j).inStart.column <= outcell.column)
@@ -480,7 +480,6 @@ public class FSONNetwork {
 						// of the next connection with respect to the 
 						// current cell
 						// (IE our input paramater "outcell")
-						// TODO: Missleading name. Rename variable.
 						double DnetNextDoutThis;
 
 						// Grab the depth, row, and column in the filter of
@@ -490,8 +489,6 @@ public class FSONNetwork {
 						int row = (outcell.row - currentFilterConnections.get(j).inStart.row);
 						int column = (outcell.column - currentFilterConnections.get(j).inStart.column);
 
-						
-						
 						if (layers.get(layerIndex).type != LayerType.MAXPOOL){
 							if(!Double.isNaN(layers.get(layerIndex).filters.get(i).gradientValues[depth][row][column])){
 						
@@ -614,8 +611,12 @@ public class FSONNetwork {
 	 * @throws Exception
 	 *             This exception is thrown when a problem occurs while
 	 *             calculating the activation function for a cell, via the
-	 *             "computePartialDerivative" function(s). See
-	 *             Layer::activationFunction() for more details.
+	 *             "computePartialDerivative" function(s).
+	 *             This exception is also thrown when trying to find the partial
+	 *             derivative with respect to a bias or weight that resides in 
+	 *             a maxpool layer. Since biases are not used in maxpool layers,
+	 *             and weights cannot be updated in a maxpool layer, the layer
+	 * 			   in which the bias or weight resides cannot be a maxpool layer.
 	 */
 	public static double stepGradient(double learningRate, LinkedList<Layer> layers, Cell[] out, int layerIndex,
 			int filterIndex, int depth, int row, int column, double[] expected) throws Exception {
@@ -648,8 +649,12 @@ public class FSONNetwork {
 	 * @throws Exception
 	 *             This exception is thrown when a problem occurs while
 	 *             calculating the activation function for a cell, via the
-	 *             "computePartialDerivative" function(s). See
-	 *             Layer::activationFunction() for more details.
+	 *             "computePartialDerivative" function(s).
+	 *             This exception is also thrown when trying to find the partial
+	 *             derivative with respect to a bias or weight that resides in 
+	 *             a maxpool layer. Since biases are not used in maxpool layers,
+	 *             and weights cannot be updated in a maxpool layer, the layer
+	 * 			   in which the bias or weight resides cannot be a maxpool layer.
 	 */
 	public static double stepGradient(double learningRate, LinkedList<Layer> layers, Cell[] out, int layerIndex,
 			int biasIndex, double[] expected) throws Exception {
@@ -704,10 +709,17 @@ public class FSONNetwork {
 	 *             This exception is thrown when a problem occurs while
 	 *             calculating the activation function for a cell. See
 	 *             Layer::activationFunction() for more details.
+	 *             This exception is also thrown when trying to find the partial
+	 *             derivative with respect to a bias or weight that resides in 
+	 *             a maxpool layer. Since biases are not used in maxpool layers,
+	 *             and weights cannot be updated in a maxpool layer, the layer
+	 * 			   in which the bias or weight resides cannot be a maxpool layer.
 	 * @throws IOException
 	 *             Thrown if there is a problem locating or opening the file for
 	 *             input. See openFileInput (declared in this class file) for
 	 *             more details.
+	 * 
+	 * TODO: Add functionality to enable/disable console output.
 	 */
 	public static void learn(double learningFactor, LinkedList<Layer> layers, Cell[] out, String[] input,
 			int iterations, double[][] dictionary, boolean independent, String saveFile) throws Exception {
@@ -729,7 +741,8 @@ public class FSONNetwork {
 		System.out.println("Calculating error before learning.");
 		double totalError = crossEntropyTotalError(layers, out, input, dictionary, independent);
 		System.out.println("Starting learning. Error is: " + totalError);
-
+		System.out.println("0," + totalError);
+		
 		// Calculate the starting learning rate using the starting error and the learningFactor parameter
 		double learningRate;
 		
@@ -774,7 +787,7 @@ public class FSONNetwork {
 							// that means it is expecting an image with multiple
 							// channels, so use the appropriate function to open
 							// it.
-							// TODO: add option to change this? Change this to RGB (must fix color network if so)?
+							// TODO: Add option to change this to RGB
 							openHSVFileInput(layers, inputs[n]);
 						}
 
@@ -836,6 +849,7 @@ public class FSONNetwork {
 //						System.out.println("----------------------------------------------");
 //						System.out.println("Recording and resetting layers");
 //						System.out.println("----------------------------------------------");
+						
 						// Open a file, using the path created above, to store our progress while learning.
 						// This file can then be used to recover a network if we are interrupted while learning.
 						PrintWriter fw = new PrintWriter(absPath);
@@ -859,6 +873,7 @@ public class FSONNetwork {
 							fw.write("<cells>\n");
 							
 //							System.out.println("Recording cells");
+							
 							// 3.c) Reset all stored gradients for all the cells in this layer, recording their value and derivative first
 							for (int x = 0; x < currentLayer.depth; x++) {
 								for (int y = 0; y < currentLayer.rows; y++) {
@@ -941,12 +956,10 @@ public class FSONNetwork {
 //			System.out.println("Recalculating error");
 //			System.out.println("----------------------------------------------");
 		
-			if(i%5 == 0){
-				System.out.println("Iteration " + i + " complete. Error is now: " + totalError);
-			}
-			
-
-			
+//			if(i%5 == 0){
+//				System.out.println((i+1) + "," + totalError);
+//			}
+				
 		}
 	}
 
@@ -965,9 +978,15 @@ public class FSONNetwork {
 	 *             This exception is thrown when a problem occurs while
 	 *             calculating the activation function for a cell. See
 	 *             Layer::activationFunction() for more details.
+	 *             This exception is also thrown when trying to find the partial
+	 *             derivative with respect to a bias or weight that resides in 
+	 *             a maxpool layer. Since biases are not used in maxpool layers,
+	 *             and weights cannot be updated in a maxpool layer, the layer
+	 * 			   in which the bias or weight resides cannot be a maxpool layer.
 	 * @throws IOException
 	 *             Thrown if there is a problem locating or opening the file for
 	 *             input.
+	 * 
 	 */
 	public static void openFileInput(LinkedList<Layer> layers, String filename) throws Exception {
 		
@@ -985,8 +1004,6 @@ public class FSONNetwork {
 		// of this project
 		String absPath = substr.concat(filename);
 		
-//		System.out.println("Reading: "+absPath);
-
 		// This is necessary to use any of the OpenCV functions
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 
@@ -1028,6 +1045,7 @@ public class FSONNetwork {
 					// inclusive, where 0 is min value and 255 is max value.
 					// Since the network is expecting a value between 0 and 1, some
 					// formatting of the data is required.
+					// TODO: Add functionality to control this formatting, since this can be used to tune input to benefit learning.
 					double value = temp[(d * layers.get(0).rows) + e];
 					value = (value-127.5)/25.5;
 					layers.get(0).cells[c][d][e].value = Layer.activationFunction(value);
@@ -1055,9 +1073,15 @@ public class FSONNetwork {
 	 *             This exception is thrown when a problem occurs while
 	 *             calculating the activation function for a cell. See
 	 *             Layer::activationFunction() for more details.
+	 *             This exception is also thrown when trying to find the partial
+	 *             derivative with respect to a bias or weight that resides in 
+	 *             a maxpool layer. Since biases are not used in maxpool layers,
+	 *             and weights cannot be updated in a maxpool layer, the layer
+	 * 			   in which the bias or weight resides cannot be a maxpool layer.
 	 * @throws IOException
 	 *             Thrown if there is a problem locating or opening the file for
 	 *             input.
+	 *             
 	 */
 	public static void openHSVFileInput(LinkedList<Layer> layers, String filename) throws Exception {
 		
@@ -1074,8 +1098,6 @@ public class FSONNetwork {
 		// Now we have the absolute path of a file located in the root directory
 		// of this project
 		String absPath = substr.concat(filename);
-		
-//		System.out.println("Reading: "+absPath);
 
 		// This is necessary to use any of the OpenCV functions
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -1122,12 +1144,13 @@ public class FSONNetwork {
 					// [0,255] and Value range is [0,255].
 					// Since the network is expecting a value between 0 and 1, some
 					// formatting of the data is required.
+					// TODO: Add functionality to control this formatting, since this can be used to tune input to benefit learning.
 					double value = temp[(d * layers.get(0).rows) + e];
 					if (c == 0){ //If we are processing the Hue channel...
 						value /= 179.0;
 					} else {
 						// For now, discard the Saturation and Value information.
-						// TODO: finish this.
+						// TODO: Add functionality to incorperate Saturation and Value into learning.
 						value = 0;
 					}
 					
@@ -1154,6 +1177,11 @@ public class FSONNetwork {
 	 *             This exception is thrown when a problem occurs while
 	 *             calculating the activation function for a cell. See
 	 *             Layer::activationFunction() for more details.
+	 *             This exception is also thrown when trying to find the partial
+	 *             derivative with respect to a bias or weight that resides in 
+	 *             a maxpool layer. Since biases are not used in maxpool layers,
+	 *             and weights cannot be updated in a maxpool layer, the layer
+	 * 			   in which the bias or weight resides cannot be a maxpool layer.
 	 * @throws IOException
 	 *             Thrown if there is a problem locating or opening the file for
 	 *             input.
@@ -1173,9 +1201,7 @@ public class FSONNetwork {
 		// Add the filename to the end of the path.
 		// Now we have the absolute path of a file located in the root directory of this project
 		String absPath = substr.concat(filename);
-
-//		System.out.println("Reading: "+absPath);
-
+		
 		// This is necessary to use any of the OpenCV functions
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 
@@ -1201,10 +1227,10 @@ public class FSONNetwork {
 				// inclusive, where 0 is black and 255 is white.
 				// Since the network is expecting a value between 0 and 1, some
 				// formatting of the data is required.
+				// TODO: Add functionality to control this formatting, since this can be used to tune input to benefit learning.
 				double value =resizedImage.get(d,e)[0];
-				value = (value-127.5)/25.5;
-				layers.get(0).cells[0][d][e].value = Layer.activationFunction(value);
-				
+				value = value/25.5;
+				layers.get(0).cells[0][d][e].value = value;
 			}
 
 		}
@@ -1232,6 +1258,11 @@ public class FSONNetwork {
 	 *             This exception is thrown when a problem occurs while
 	 *             calculating the activation function for a cell. See
 	 *             Layer::activationFunction() for more details.
+	 *             This exception is also thrown when trying to find the partial
+	 *             derivative with respect to a bias or weight that resides in 
+	 *             a maxpool layer. Since biases are not used in maxpool layers,
+	 *             and weights cannot be updated in a maxpool layer, the layer
+	 * 			   in which the bias or weight resides cannot be a maxpool layer.
 	 */
 	public static void feedForward(LinkedList<Layer> layers, Cell[] out, boolean store) throws Exception {
 
@@ -1307,11 +1338,15 @@ public class FSONNetwork {
 	 *             This exception is thrown when a problem occurs while
 	 *             calculating the activation function for a cell. See
 	 *             Layer::activationFunction() for more details.
+	 *             This exception is also thrown when trying to find the partial
+	 *             derivative with respect to a bias or weight that resides in 
+	 *             a maxpool layer. Since biases are not used in maxpool layers,
+	 *             and weights cannot be updated in a maxpool layer, the layer
+	 * 			   in which the bias or weight resides cannot be a maxpool layer.
 	 * @throws IOException
 	 *             Thrown if there is a problem locating or opening the file for
 	 *             input.
 	 *             
-	 *             TODO: Could maybe use better documentation?
 	 */
 	public static double crossEntropyTotalError(LinkedList<Layer> layers, Cell[] out, String[] input,
 			double[][] dictionary, boolean independent) throws Exception {
@@ -1338,7 +1373,7 @@ public class FSONNetwork {
 					} else { // If the first layer has more than a single depth, that
 								// means it is expecting an image with multiple
 								// channels, so use the appropriate function to open it
-								// TODO: Change this? (if so, fix colorNetwork) Add option for this?
+								// TODO: Add option to change this to RGB.
 						openHSVFileInput(layers, inputs[n]);
 					}
 					
@@ -1359,10 +1394,11 @@ public class FSONNetwork {
 						// Add y*ln(x) + (1-y)*ln(1-x) to the sum,
 						// where y is the expected value for this cell
 						// and x is the actual value for this cell
-						// TODO: Should probably comment this section better.
+						// TODO: Document this section better.
 						if (out[k].value != dictionary[i][k]) {
 							double log;
 							if ((out[k].value == 0) && (dictionary[i][k] != 0)) {
+								//TODO: fix this
 								sum = Double.NEGATIVE_INFINITY;
 								return sum;
 							} else {
@@ -1372,6 +1408,7 @@ public class FSONNetwork {
 							double oneMinusLog;
 
 							if ((out[k].value == 1) && (dictionary[i][k] != 1)) {
+								//TODO: fix this
 								sum = Double.NEGATIVE_INFINITY;
 								return sum;
 
@@ -1393,36 +1430,41 @@ public class FSONNetwork {
 		return error;
 	}
 	
-	/**
-	 * This function locates a name within an alphabetically sorted array of names
-	 * and returns the index at which that name was found. 
-	 * It uses a recursive "divide and conquor" algorythm.
-	 *  
-	 * @param names The master array of names to search
-	 * @param start The starting index of the section to search
-	 * @param end The ending index of the section to search
-	 * @param toFind The name to find within the section searched of the array
-	 * @return The index of the location of the name within the "names" array, or -1 if that name is not found 
-	 */
-	public static int findName(String[] names, int start, int end, String toFind) {
-        
-        if (start < end) {
-            int middleIndex = ((end - start) / 2) + start; 
-            if ((toFind.compareTo(names[middleIndex])) < 0){
-				return findName(names, start, middleIndex, toFind);
+	//TODO: Document or take this out.
+	public static double crossEntropyTotalErrorArray(double[] actual, double[] expected){
+		double sum = 0.0;
+		for (int k = 0; k < actual.length; k++) {
+			// Add y*ln(x) + (1-y)*ln(1-x) to the sum,
+			// where y is the expected value for this cell
+			// and x is the actual value for this cell
+			if (actual[k] != expected[k]) {
+				double log;
+				if ((actual[k] == 0) && (expected[k] != 0)) {
+					//TODO: Fix this.
+					sum = Double.NEGATIVE_INFINITY;
+					return sum;
+				} else {
+					log = Math.log(actual[k]);
+				}
+				double oneMinusLog;
 
-			} else if ((toFind.compareTo(names[middleIndex])) > 0) {
-				return findName(names, middleIndex + 1, end, toFind);
+				if ((actual[k] == 1) && (expected[k] != 1)) {
+					sum = Double.NEGATIVE_INFINITY;
+					return sum;
 
-			} else {
-				return middleIndex;
+				} else {
+					oneMinusLog = Math.log(1 - actual[k]);
+				}
+
+				sum += (expected[k] * log) + ((1 - expected[k]) * oneMinusLog);
 			}
-		} else if (toFind.compareTo(names[end]) == 0) {
-			return end;
-		} else {
-			return -1;
 		}
+		
+		// Multiply sum by -1/n, where n is the number of examples in the training data
+		double error = (sum * (0.0 - (1.0)))/(double) actual.length;
 
+		return error;
+		
 	}
 	
 	/**
@@ -1487,29 +1529,30 @@ public class FSONNetwork {
 	}
 
 	/**
-	 * This function creates and trains a sample network to detect color.
-	 * The network has an output array of 9 doubles, each representing the
+	 * This function creates and trains a sample network to detect color. The
+	 * network has an output array of 9 doubles, each representing the
 	 * probability that the input color corresponds to the 8 colors:
 	 * 
-	 * Red, Orange, Yellow, Green, Aqua (blue/green), Blue, Purple,
-	 * and Pink (fuscha). 
+	 * Red, Orange, Yellow, Green, Aqua (blue/green), Blue, Purple, and Pink
+	 * (fuscha).
 	 * 
 	 * (in that order)
 	 * 
-	 * The last element in the array also corresponds to red; This is an 
-	 * artifact of the arrangement of the Hue, where both 0 and 360 
-	 * correspond to the same canonical red.
+	 * The last element in the array also corresponds to red; This is an
+	 * artifact of the arrangement of the Hue, where both 0 and 360 correspond
+	 * to the same canonical red.
 	 * 
 	 * Please note that the saturation and value (IE "brightness") are
-	 * disregarded (this means that the colors "white", "black", and 
-	 * "grey" are not recognized).
+	 * disregarded (this means that the colors "white", "black", and "grey" are
+	 * not recognized).
 	 * 
-	 * See the function:
-	 * 		public static FSONNetwork colorNetwork()
-	 * ...declared in this class for more details on the network itself.
+	 * See the function: public static FSONNetwork colorNetwork() ...declared in
+	 * this class for more details on the network itself.
 	 * 
 	 * @return A sample trained color-recognition network.
-	 * @throws Exception Thrown when there is a problem reading the training input files.
+	 * @throws Exception
+	 *             Thrown when there is a problem reading the training input
+	 *             files.
 	 */
 	public static FSONNetwork createAndTrainColorNetwork() throws Exception{
 		FSONNetwork colorNet = FSONNetwork.colorNetwork();
@@ -1575,10 +1618,42 @@ public class FSONNetwork {
 		// Use the file "testlearnlfw.txt" to store our progress while learning.
 		// The learning factor is set low here because input ranges from 0 to 1 
 		// over a single cell, so finer control is needed.
-		FSONNetwork.learn(0.225, colorNet.layers, colorNet.out, learnInput, 5000, dictionary, false,
+		FSONNetwork.learn(0.225, colorNet.layers, colorNet.out, learnInput, 15000, dictionary, false,
 				"testlearncolor.txt");
 		
 		return colorNet;
 	}
 	
+	/**
+	 * This function creates, initializes, and returns a sample network
+	 * designed to recognize the presence of a simple circle  in a 
+	 * greyscale input image.
+	 * 
+	 * @return A sample shape-recognition network, initialized but untrained.
+	 */
+	public static FSONNetwork shapeNetwork() {
+		
+		FSONNetwork sn = new FSONNetwork();
+
+		Layer l0 = new Layer(20, 20, 1, 7, 7, 1, 1, 1, 0, LayerType.CONV);
+		l0.initLayer();
+		
+		Layer l2 = new Layer(14, 14, 1, 14, 14, 1, 1, 1, 0, LayerType.FULLY);
+		l2.initLayer();
+		
+		// This is the last "layer": this will hold the output of the network
+		sn.out = new Cell[1];
+
+		// Initialize the cells because java won't do it for you
+		sn.out[0] = new Cell();
+		
+		// Initialize the list of layers
+		sn.layers = new LinkedList<Layer>();
+
+		// Add each layer at the appropriate place in the list.
+		sn.layers.add(0, l0);
+		sn.layers.add(1, l2);
+		
+		return sn;
+	}
 }
